@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from "vue";
 import { RouterLink, RouterView } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useUiStore } from "@/stores/ui";
@@ -16,11 +17,22 @@ const {
   authError,
   initialLoading,
   showLoginGate,
+  showShareExpired,
   googleScriptError,
   googleButtonRoot,
   idToken,
   logout,
 } = useAppShellViewModel();
+
+const shareExpiresLabel = computed(() => {
+  if (!healthStore.shareExpiresAt) {
+    return "";
+  }
+  const date = new Date(healthStore.shareExpiresAt);
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+});
 </script>
 
 <template>
@@ -50,6 +62,13 @@ const {
     </header>
     <main>
       <p v-if="initialLoading">読み込み中...</p>
+      <section v-else-if="showShareExpired" class="table-wrap auth-gate">
+        <h2 class="section-title">閲覧用リンクの有効期限が切れています</h2>
+        <p class="meta">
+          このリンクは発行から30分間だけ有効です。発行者に再発行を依頼してください。
+        </p>
+        <p v-if="healthStore.error" class="error">{{ healthStore.error }}</p>
+      </section>
       <section v-else-if="showLoginGate" class="table-wrap auth-gate">
         <h2 class="section-title">Googleログインが必要です</h2>
         <p class="meta">許可されたアカウントでサインインしてください。</p>
@@ -65,6 +84,9 @@ const {
         </p>
       </section>
       <template v-else>
+        <p v-if="healthStore.shareMode" class="meta">
+          医師向け閲覧リンクで表示中です<template v-if="shareExpiresLabel">（{{ shareExpiresLabel }} まで有効）</template>。数値はそのまま表示されます。
+        </p>
         <p v-if="error" class="error">{{ error }}</p>
         <p v-if="source === 'mock'" class="meta">サンプルデータを表示しています。</p>
         <RouterView />

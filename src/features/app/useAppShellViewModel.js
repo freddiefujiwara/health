@@ -21,7 +21,10 @@ export function useAppShellViewModel() {
   const hasData = computed(() => Boolean(healthStore.data));
   const initialLoading = computed(() => healthStore.loading && !hasData.value);
   const showLoginGate = computed(
-    () => !initialLoading.value && !idToken.value && (healthStore.source !== "live" || !hasData.value),
+    () => !initialLoading.value && !idToken.value && !healthStore.shareMode && (healthStore.source !== "live" || !hasData.value),
+  );
+  const showShareExpired = computed(
+    () => healthStore.shareMode && !initialLoading.value && !hasData.value,
   );
 
   /**
@@ -129,6 +132,7 @@ export function useAppShellViewModel() {
     authError,
     initialLoading,
     showLoginGate,
+    showShareExpired,
     googleScriptError,
     googleButtonRoot,
     idToken,

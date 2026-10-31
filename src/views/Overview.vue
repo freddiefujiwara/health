@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import LineChart from "@/components/LineChart.vue";
+import ShareSessionCard from "@/components/ShareSessionCard.vue";
 import { formatDecimal, formatInteger, formatKg, formatPercentChange } from "@/domain/format";
 import {
   average,
@@ -15,7 +16,7 @@ import {
   remainingToGoal,
 } from "@/domain/stats";
 
-const { data } = useHealthData();
+const { data, store } = useHealthData();
 
 const body = computed(() => data.value?.bodyComposition ?? []);
 const tanita = computed(() => body.value.filter((row) => row.measurementType === "TANITA"));
@@ -145,5 +146,7 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
         </tbody>
       </table>
     </section>
+
+    <ShareSessionCard v-if="store.hasIdToken && !store.shareMode" />
   </div>
 </template>
