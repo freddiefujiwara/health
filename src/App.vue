@@ -3,12 +3,24 @@ import { RouterLink, RouterView } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useUiStore } from "@/stores/ui";
 import { useHealthData } from "@/composables/useHealthData";
+import { useAppShellViewModel } from "@/features/app/useAppShellViewModel";
 
 const uiStore = useUiStore();
 const { themeLabel, privacyLabel } = storeToRefs(uiStore);
 uiStore.applyToDocument();
 
-const { loading, error, source } = useHealthData();
+const { error, source } = useHealthData();
+const {
+  healthStore,
+  hasGoogleClientId,
+  authError,
+  initialLoading,
+  showLoginGate,
+  googleScriptError,
+  googleButtonRoot,
+  idToken,
+  logout,
+} = useAppShellViewModel();
 </script>
 
 <template>
@@ -30,11 +42,28 @@ const { loading, error, source } = useHealthData();
           <button class="theme-toggle" type="button" @click="uiStore.toggleTheme">
             {{ themeLabel }}
           </button>
+          <button v-if="idToken" class="theme-toggle" type="button" @click="logout">
+            ログアウト
+          </button>
         </div>
       </div>
     </header>
     <main>
-      <p v-if="loading">読み込み中...</p>
+      <p v-if="initialLoading">読み込み中...</p>
+      <section v-else-if="showLoginGate" class="table-wrap auth-gate">
+        <h2 class="section-title">Googleログインが必要です</h2>
+        <p class="meta">許可されたアカウントでサインインしてください。</p>
+        <p v-if="authError" class="error">
+          認証エラーが発生しました。別アカウントで再ログインしてください。({{ healthStore.error }})
+        </p>
+        <p v-if="googleScriptError" class="error">
+          Googleログインスクリプトの読み込みに失敗しました。広告ブロック等を解除して再読み込みしてください。
+        </p>
+        <div ref="googleButtonRoot" class="google-login-button"></div>
+        <p v-if="!hasGoogleClientId" class="error">
+          VITE_GOOGLE_CLIENT_ID が未設定です。
+        </p>
+      </section>
       <template v-else>
         <p v-if="error" class="error">{{ error }}</p>
         <p v-if="source === 'mock'" class="meta">サンプルデータを表示しています。</p>
