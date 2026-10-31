@@ -5,10 +5,12 @@ import LineChart from "@/components/LineChart.vue";
 import { formatDecimal, formatInteger, formatKg, formatPercentChange } from "@/domain/format";
 import {
   average,
-  delta,
   firstOf,
   goalProgressPercent,
+  goalReachDate,
   latestOf,
+  predictWeightKg,
+  projectionPoints,
   recentRows,
   remainingToGoal,
 } from "@/domain/stats";
@@ -51,6 +53,30 @@ const finalProgress = computed(() =>
   goalProgressPercent(start.value?.weightKg, latest.value?.weightKg, goals.value.finalGoalKg),
 );
 
+const completedNutrition = computed(() =>
+  (data.value?.dailyNutrition ?? []).filter((row) => row.completeness === "完了"),
+);
+const avgBalance30 = computed(() =>
+  average(recentRows(completedNutrition.value, 30).map((row) => row.balanceKcal)),
+);
+const projection = computed(() =>
+  latest.value ? projectionPoints(latest.value, avgBalance30.value, 90, 15) : [],
+);
+const predictionCards = computed(() => {
+  if (!latest.value) {
+    return [];
+  }
+  const l = latest.value;
+  const interimDate = goalReachDate(l.date, l.weightKg, goals.value.interimGoalKg, avgBalance30.value);
+  const finalDate = goalReachDate(l.date, l.weightKg, goals.value.finalGoalKg, avgBalance30.value);
+  return [
+    { label: "直近30日 平均収支（完了日のみ）", value: `${formatInteger(avgBalance30.value)} kcal/日` },
+    { label: "30日後の予測体重", value: formatKg(predictWeightKg(l.weightKg, avgBalance30.value, 30)) },
+    { label: `中間目標 ${formatInteger(goals.value.interimGoalKg)} kg 到達予測`, value: interimDate ?? "現在の収支では未達" },
+    { label: `最終目標 ${formatInteger(goals.value.finalGoalKg)} kg 到達予測`, value: finalDate ?? "現在の収支では未達" },
+  ];
+});
+
 const plan = computed(() => data.value?.medicationPlan?.[0] ?? null);
 const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
 </script>
@@ -69,6 +95,7 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
       <h2 class="section-title">体重の推移</h2>
       <LineChart
         :points="weightPoints"
+        :projection-points="projection"
         unit="kg"
         :goal-value="goals.finalGoalKg"
         :goal-label="`最終目標 ${goals.finalGoalKg}kg`"
@@ -80,6 +107,19 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
       <div class="progress-track">
         <div class="progress-fill" :style="{ width: `${finalProgress ?? 0}%` }"></div>
       </div>
+    </section>
+
+    <section class="table-wrap">
+      <h2 class="section-title">体重予測（収支ベース）</h2>
+      <div class="card-grid" style="margin-bottom: 0">
+        <section v-for="card in predictionCards" :key="card.label" class="card">
+          <h2>{{ card.label }}</h2>
+          <p class="amount-value">{{ card.value }}</p>
+        </section>
+      </div>
+      <p class="meta" style="margin-top: 8px">
+        直近30日（完了日）の平均収支が続くと仮定し、7,700 kcal ≒ 1 kg で換算した単純推計です。水分や筋肉量の変化は含みません。
+      </p>
     </section>
 
     <section v-if="plan" class="table-wrap">
