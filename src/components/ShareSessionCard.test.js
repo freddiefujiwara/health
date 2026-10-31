@@ -137,6 +137,39 @@ describe("share session card", () => {
     expect(wrapper.find("input.share-url-input").exists()).toBe(false);
   });
 
+  it("disables the copy button and URL field while re-issuing", async () => {
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    let resolveReissue;
+    const pendingReissue = new Promise((resolve) => {
+      resolveReissue = resolve;
+    });
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(async () => okResponse({
+        share_token: "share-token-xyz",
+        expires_at: expiresAt,
+      }))
+      .mockImplementationOnce(() => pendingReissue);
+    vi.stubGlobal("fetch", fetchMock);
+    const { wrapper } = buildWrapper();
+    await wrapper.findAll("button").find((b) => b.text().includes("発行")).trigger("click");
+    await flushPromises();
+    expect(wrapper.find("input.share-url-input").exists()).toBe(true);
+
+    await wrapper.findAll("button").find((b) => b.text().includes("発行し直す")).trigger("click");
+    const copyButton = wrapper.findAll("button").find((b) => b.text().includes("コピー"));
+    expect(copyButton.attributes("disabled")).toBeDefined();
+    expect(wrapper.find("input.share-url-input").attributes("disabled")).toBeDefined();
+
+    resolveReissue(okResponse({
+      share_token: "share-token-new",
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    }));
+    await flushPromises();
+    const copyAfter = wrapper.findAll("button").find((b) => b.text().includes("コピー"));
+    expect(copyAfter.attributes("disabled")).toBeUndefined();
+    expect(wrapper.find("input.share-url-input").element.value).toContain("share-token-new");
+  });
+
   it("copies the URL to the clipboard", async () => {
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     vi.stubGlobal("fetch", vi.fn(async () => okResponse({
