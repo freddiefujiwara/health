@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupLabResults, labItemSeries, labItemUnit, numericLabItems } from "./labs";
+import { featuredLabSeries, groupLabResults, labItemSeries, labItemUnit, numericLabItems } from "./labs";
 
 const rows = [
   { date: "2026-08-20", panel: "血液検査", item: "γ-GTP", value: 178, valueNumber: 178, unit: "IU/L" },
@@ -52,5 +52,18 @@ describe("lab sort branch coverage", () => {
     ];
     expect(groupLabResults(shuffled).map((g) => g.date)).toEqual(["2026-08-20", "2025-02-06", "2023-10-12"]);
     expect(labItemSeries(shuffled, "AST").map((p) => p.value)).toEqual([33, 35, 26]);
+  });
+});
+
+describe("featured lab items", () => {
+  it("returns series for featured items with at least two points", () => {
+    const featured = featuredLabSeries(rows);
+    expect(featured.map((f) => f.item)).toEqual(["γ-GTP", "AST"]);
+    expect(featured[0].unit).toBe("IU/L");
+    expect(featured[0].points).toHaveLength(4);
+  });
+
+  it("returns an empty list when nothing matches", () => {
+    expect(featuredLabSeries([])).toEqual([]);
   });
 });

@@ -36,3 +36,24 @@ export function labItemUnit(rows, item) {
   const series = rows.filter((row) => row.item === item);
   return series.length ? (series[series.length - 1].unit ?? "") : "";
 }
+
+/** Items worth watching (frequently flagged or clinically relevant for this user). */
+export const FEATURED_LAB_ITEMS = [
+  "γ-GTP",
+  "ALT",
+  "AST",
+  "クレアチニン",
+  "eGFR",
+  "C反応性蛋白",
+  "中性脂肪",
+  "グルコース",
+];
+
+/** Chart-ready series for the featured items that have at least two numeric points. */
+export function featuredLabSeries(rows) {
+  return FEATURED_LAB_ITEMS.map((item) => ({
+    item,
+    unit: labItemUnit(rows, item),
+    points: labItemSeries(rows, item),
+  })).filter((entry) => entry.points.length >= 2);
+}

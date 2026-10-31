@@ -76,7 +76,16 @@ function render() {
   svg
     .append("g")
     .attr("transform", `translate(0,${h - margin.bottom})`)
-    .call(d3.axisBottom(x).ticks(5).tickFormat(d3.timeFormat("%m/%d")))
+    .call(
+      d3
+        .axisBottom(x)
+        .ticks(5)
+        .tickFormat(
+          d3.timeFormat(
+            (x.domain()[1] - x.domain()[0]) / 86400000 > 550 ? "%Y" : "%m/%d",
+          ),
+        ),
+    )
     .selectAll("text")
     .attr("fill", "#94a3b8");
   svg
