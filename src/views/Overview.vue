@@ -43,9 +43,9 @@ const cards = computed(() => {
     { label: "内臓脂肪レベル", value: formatInteger(l.visceralFatLevel), sub: `開始時 ${formatInteger(s?.visceralFatLevel)}` },
     { label: `中間目標 ${formatInteger(goals.value.interimGoalKg)} kgまで`, value: formatKg(remainingToGoal(l.weightKg, goals.value.interimGoalKg)), sub: `進捗 ${formatDecimal(goalProgressPercent(s?.weightKg, l.weightKg, goals.value.interimGoalKg), 0)} %` },
     { label: `最終目標 ${formatInteger(goals.value.finalGoalKg)} kgまで`, value: formatKg(remainingToGoal(l.weightKg, goals.value.finalGoalKg)), sub: `進捗 ${formatDecimal(goalProgressPercent(s?.weightKg, l.weightKg, goals.value.finalGoalKg), 0)} %` },
-    { label: "直近7日 平均摂取", value: `${formatInteger(average(nutrition7.value.map((r) => r.intakeKcal)))} kcal`, sub: `目安 ${formatInteger(goals.value.intakeGuidelineKcal)} kcal` },
-    { label: "直近7日 平均収支", value: `${formatInteger(average(nutrition7.value.map((r) => r.balanceKcal)))} kcal`, sub: "マイナスが減量方向" },
-    { label: "直近7日 平均歩数", value: `${formatInteger(average(steps7.value.map((r) => r.steps)))} 歩`, sub: "" },
+    { label: "直近7日 平均摂取", value: `${formatInteger(average(nutrition7.value.map((r) => r.intakeKcal)))} kcal`, sub: `目安 ${formatInteger(goals.value.intakeGuidelineKcal)} kcal`, public: true },
+    { label: "直近7日 平均収支", value: `${formatInteger(average(nutrition7.value.map((r) => r.balanceKcal)))} kcal`, sub: "マイナスが減量方向", public: true },
+    { label: "直近7日 平均歩数", value: `${formatInteger(average(steps7.value.map((r) => r.steps)))} 歩`, sub: "", public: true },
   ];
 });
 
@@ -86,7 +86,7 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
     <div class="card-grid">
       <section v-for="card in cards" :key="card.label" class="card">
         <h2>{{ card.label }}</h2>
-        <p class="amount-value">{{ card.value }}</p>
+        <p :class="card.public ? 'amount-value is-public' : 'amount-value'">{{ card.value }}</p>
         <p v-if="card.sub" class="meta">{{ card.sub }}</p>
       </section>
     </div>
@@ -96,13 +96,14 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
       <LineChart
         :points="weightPoints"
         :projection-points="projection"
+        hide-axis-in-private
         unit="kg"
         :goal-value="goals.finalGoalKg"
         :goal-label="`最終目標 ${goals.finalGoalKg}kg`"
       />
       <p class="meta" style="margin-top: 8px">
         最終目標までの進捗
-        <span class="amount-value">{{ formatDecimal(finalProgress, 0) }}%</span>
+        <span class="amount-value is-public">{{ formatDecimal(finalProgress, 0) }}%</span>
       </p>
       <div class="progress-track">
         <div class="progress-fill" :style="{ width: `${finalProgress ?? 0}%` }"></div>

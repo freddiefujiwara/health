@@ -32,15 +32,15 @@ const latestSegments = computed(() =>
     <div class="chart-grid">
       <section class="chart-card">
         <h2 class="section-title">体重（kg）</h2>
-        <LineChart :points="weightPoints" unit="kg" />
+        <LineChart :points="weightPoints" unit="kg" hide-axis-in-private />
       </section>
       <section class="chart-card">
         <h2 class="section-title">体脂肪率（%）</h2>
-        <LineChart :points="fatPoints" unit="%" color="#f59e0b" />
+        <LineChart :points="fatPoints" unit="%" color="#f59e0b" hide-axis-in-private />
       </section>
       <section class="chart-card">
         <h2 class="section-title">筋肉量（kg）</h2>
-        <LineChart :points="musclePoints" unit="kg" color="#22c55e" />
+        <LineChart :points="musclePoints" unit="kg" color="#22c55e" hide-axis-in-private />
       </section>
     </div>
 
