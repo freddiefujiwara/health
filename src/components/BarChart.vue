@@ -11,6 +11,7 @@ const props = defineProps({
   guidelineValue: { type: Number, default: null },
   guidelineLabel: { type: String, default: "" },
   signed: { type: Boolean, default: false },
+  hideAxisInPrivate: { type: Boolean, default: false },
   height: { type: Number, default: 220 },
 });
 
@@ -77,7 +78,7 @@ function render() {
     .attr("fill", "#94a3b8");
   svg
     .append("g")
-    .attr("class", "chart-y-axis")
+    .attr("class", props.hideAxisInPrivate ? "chart-y-axis" : null)
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5))
     .selectAll("text")
