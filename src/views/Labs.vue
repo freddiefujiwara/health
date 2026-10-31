@@ -2,26 +2,12 @@
 import { computed, ref, watchEffect } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import LineChart from "@/components/LineChart.vue";
-import {
-  featuredLabSeries,
-  groupLabResults,
-  labItemSeries,
-  labItemUnit,
-  numericLabItems,
-} from "@/domain/labs";
+import { featuredLabSeries, groupLabResults } from "@/domain/labs";
 
 const { data } = useHealthData();
 
 const labResults = computed(() => data.value?.labResults ?? []);
 const groups = computed(() => groupLabResults(labResults.value));
-const items = computed(() => numericLabItems(labResults.value));
-
-const selectedItem = ref("");
-watchEffect(() => {
-  if (!items.value.includes(selectedItem.value)) {
-    selectedItem.value = items.value.includes("γ-GTP") ? "γ-GTP" : (items.value[0] ?? "");
-  }
-});
 
 const featured = computed(() => featuredLabSeries(labResults.value));
 const activeFeatured = ref("");
@@ -33,9 +19,6 @@ watchEffect(() => {
 const activeEntry = computed(
   () => featured.value.find((entry) => entry.item === activeFeatured.value) ?? null,
 );
-const series = computed(() => labItemSeries(labResults.value, selectedItem.value));
-const unit = computed(() => labItemUnit(labResults.value, selectedItem.value));
-
 function displayValue(row) {
   return row.value === "" || row.value === null || row.value === undefined ? "-" : String(row.value);
 }
@@ -64,16 +47,6 @@ function displayValue(row) {
         :unit="activeEntry.unit"
         color="#0ea5e9"
       />
-    </section>
-
-    <section class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">項目の推移（全項目から選択）</h2>
-      <label class="meta" for="lab-item-select">項目</label>
-      <select id="lab-item-select" v-model="selectedItem" class="lab-select">
-        <option v-for="item in items" :key="item" :value="item">{{ item }}</option>
-      </select>
-      <LineChart :points="series" :unit="unit" color="#0ea5e9" />
-      <p class="meta">数値で記録された項目だけを選べます。</p>
     </section>
 
     <section v-for="group in groups" :key="group.date" class="table-wrap">
@@ -129,14 +102,5 @@ function displayValue(row) {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
-}
-
-.lab-select {
-  margin: 4px 0 12px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
 }
 </style>
