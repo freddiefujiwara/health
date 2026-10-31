@@ -70,10 +70,10 @@ const predictionCards = computed(() => {
   const interimDate = goalReachDate(l.date, l.weightKg, goals.value.interimGoalKg, avgBalance30.value);
   const finalDate = goalReachDate(l.date, l.weightKg, goals.value.finalGoalKg, avgBalance30.value);
   return [
-    { label: "直近30日 平均収支（完了日のみ）", value: `${formatInteger(avgBalance30.value)} kcal/日` },
-    { label: "30日後の予測体重", value: formatKg(predictWeightKg(l.weightKg, avgBalance30.value, 30)) },
-    { label: `中間目標 ${formatInteger(goals.value.interimGoalKg)} kg 到達予測`, value: interimDate ?? "現在の収支では未達" },
-    { label: `最終目標 ${formatInteger(goals.value.finalGoalKg)} kg 到達予測`, value: finalDate ?? "現在の収支では未達" },
+    { label: "直近30日 平均収支（完了日のみ）", value: `${formatInteger(avgBalance30.value)} kcal/日`, public: true },
+    { label: "30日後の予測体重", value: formatKg(predictWeightKg(l.weightKg, avgBalance30.value, 30)), public: false },
+    { label: `中間目標 ${formatInteger(goals.value.interimGoalKg)} kg 到達予測`, value: interimDate ?? "現在の収支では未達", public: true },
+    { label: `最終目標 ${formatInteger(goals.value.finalGoalKg)} kg 到達予測`, value: finalDate ?? "現在の収支では未達", public: true },
   ];
 });
 
@@ -114,7 +114,7 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
       <div class="card-grid" style="margin-bottom: 0">
         <section v-for="card in predictionCards" :key="card.label" class="card">
           <h2>{{ card.label }}</h2>
-          <p class="amount-value">{{ card.value }}</p>
+          <p :class="card.public ? 'amount-value is-public' : 'amount-value'">{{ card.value }}</p>
         </section>
       </div>
       <p class="meta" style="margin-top: 8px">
