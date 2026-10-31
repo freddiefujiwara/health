@@ -21,6 +21,7 @@ const { loading, error, source } = useHealthData();
           <RouterLink to="/body">体組成</RouterLink>
           <RouterLink to="/nutrition">食事</RouterLink>
           <RouterLink to="/steps">歩数</RouterLink>
+          <RouterLink to="/labs">検査結果</RouterLink>
         </nav>
         <div class="header-buttons">
           <button class="theme-toggle" type="button" @click="uiStore.togglePrivacy">

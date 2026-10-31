@@ -13,7 +13,13 @@ describe("app integration", () => {
     const pinia = createPinia();
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: "/overview", component: Overview }],
+      routes: [
+        { path: "/overview", component: Overview },
+        { path: "/body", component: { template: "<div />" } },
+        { path: "/nutrition", component: { template: "<div />" } },
+        { path: "/steps", component: { template: "<div />" } },
+        { path: "/labs", component: { template: "<div />" } },
+      ],
     });
     const store = useHealthStore(pinia);
     store.data = normalizeHealth(sampleApi);

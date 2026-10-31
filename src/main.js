@@ -6,6 +6,7 @@ import Overview from "./views/Overview.vue";
 import BodyComposition from "./views/BodyComposition.vue";
 import Nutrition from "./views/Nutrition.vue";
 import Steps from "./views/Steps.vue";
+import Labs from "./views/Labs.vue";
 import "./style.css";
 
 const router = createRouter({
@@ -16,6 +17,7 @@ const router = createRouter({
     { path: "/body", component: BodyComposition },
     { path: "/nutrition", component: Nutrition },
     { path: "/steps", component: Steps },
+    { path: "/labs", component: Labs },
   ],
 });
 
