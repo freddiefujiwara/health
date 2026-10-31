@@ -366,3 +366,7 @@ td {
 .bar-chart {
   width: 100%;
 }
+
+:root[data-private="on"] .chart-y-axis text {
+  display: none;
+}

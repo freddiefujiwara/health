@@ -72,6 +72,7 @@ function render() {
     .attr("fill", "#94a3b8");
   svg
     .append("g")
+    .attr("class", "chart-y-axis")
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5))
     .selectAll("text")
