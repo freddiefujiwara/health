@@ -24,6 +24,15 @@ watchEffect(() => {
 });
 
 const featured = computed(() => featuredLabSeries(labResults.value));
+const activeFeatured = ref("");
+watchEffect(() => {
+  if (!featured.value.some((entry) => entry.item === activeFeatured.value)) {
+    activeFeatured.value = featured.value[0]?.item ?? "";
+  }
+});
+const activeEntry = computed(
+  () => featured.value.find((entry) => entry.item === activeFeatured.value) ?? null,
+);
 const series = computed(() => labItemSeries(labResults.value, selectedItem.value));
 const unit = computed(() => labItemUnit(labResults.value, selectedItem.value));
 
@@ -34,13 +43,28 @@ function displayValue(row) {
 
 <template>
   <div v-if="data">
-    <h2 class="section-title">注目項目の推移</h2>
-    <div class="chart-grid" style="margin-bottom: 16px">
-      <section v-for="entry in featured" :key="entry.item" class="chart-card">
-        <h3 class="section-title">{{ entry.item }}</h3>
-        <LineChart :points="entry.points" :unit="entry.unit" color="#0ea5e9" />
-      </section>
-    </div>
+    <section class="chart-card" style="margin-bottom: 16px">
+      <h2 class="section-title">注目項目の推移</h2>
+      <div class="lab-tabs" role="tablist" aria-label="注目項目">
+        <button
+          v-for="entry in featured"
+          :key="entry.item"
+          type="button"
+          role="tab"
+          :aria-selected="entry.item === activeFeatured"
+          :class="entry.item === activeFeatured ? 'lab-tab is-active' : 'lab-tab'"
+          @click="activeFeatured = entry.item"
+        >
+          {{ entry.item }}
+        </button>
+      </div>
+      <LineChart
+        v-if="activeEntry"
+        :points="activeEntry.points"
+        :unit="activeEntry.unit"
+        color="#0ea5e9"
+      />
+    </section>
 
     <section class="chart-card" style="margin-bottom: 16px">
       <h2 class="section-title">項目の推移（全項目から選択）</h2>
@@ -84,6 +108,29 @@ function displayValue(row) {
 </template>
 
 <style scoped>
+.lab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+
+.lab-tab {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: var(--surface-elevated);
+  color: var(--link);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.lab-tab.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
 .lab-select {
   margin: 4px 0 12px;
   padding: 6px 10px;
