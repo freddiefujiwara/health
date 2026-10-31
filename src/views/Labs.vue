@@ -2,7 +2,13 @@
 import { computed, ref, watchEffect } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import LineChart from "@/components/LineChart.vue";
-import { groupLabResults, labItemSeries, labItemUnit, numericLabItems } from "@/domain/labs";
+import {
+  featuredLabSeries,
+  groupLabResults,
+  labItemSeries,
+  labItemUnit,
+  numericLabItems,
+} from "@/domain/labs";
 
 const { data } = useHealthData();
 
@@ -17,6 +23,7 @@ watchEffect(() => {
   }
 });
 
+const featured = computed(() => featuredLabSeries(labResults.value));
 const series = computed(() => labItemSeries(labResults.value, selectedItem.value));
 const unit = computed(() => labItemUnit(labResults.value, selectedItem.value));
 
@@ -27,8 +34,16 @@ function displayValue(row) {
 
 <template>
   <div v-if="data">
+    <h2 class="section-title">注目項目の推移</h2>
+    <div class="chart-grid" style="margin-bottom: 16px">
+      <section v-for="entry in featured" :key="entry.item" class="chart-card">
+        <h3 class="section-title">{{ entry.item }}</h3>
+        <LineChart :points="entry.points" :unit="entry.unit" color="#0ea5e9" />
+      </section>
+    </div>
+
     <section class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">項目の推移</h2>
+      <h2 class="section-title">項目の推移（全項目から選択）</h2>
       <label class="meta" for="lab-item-select">項目</label>
       <select id="lab-item-select" v-model="selectedItem" class="lab-select">
         <option v-for="item in items" :key="item" :value="item">{{ item }}</option>
