@@ -1,0 +1,108 @@
+<script setup>
+import { computed } from "vue";
+import { useHealthData } from "@/composables/useHealthData";
+import LineChart from "@/components/LineChart.vue";
+import { formatDecimal, formatInteger, formatKg, formatPercentChange } from "@/domain/format";
+import {
+  average,
+  delta,
+  firstOf,
+  goalProgressPercent,
+  latestOf,
+  recentRows,
+  remainingToGoal,
+} from "@/domain/stats";
+
+const { data } = useHealthData();
+
+const body = computed(() => data.value?.bodyComposition ?? []);
+const tanita = computed(() => body.value.filter((row) => row.measurementType === "TANITA"));
+const latest = computed(() => latestOf(tanita.value));
+const start = computed(() => firstOf(tanita.value));
+const goals = computed(() => data.value?.goals ?? {});
+
+const weightPoints = computed(() =>
+  tanita.value.map((row) => ({ date: row.date, value: row.weightKg })),
+);
+
+const nutrition7 = computed(() => recentRows(data.value?.dailyNutrition ?? [], 7));
+const steps7 = computed(() => recentRows(data.value?.steps ?? [], 7));
+
+const cards = computed(() => {
+  if (!latest.value) {
+    return [];
+  }
+  const l = latest.value;
+  const s = start.value;
+  return [
+    { label: `最新体重（${l.date}）`, value: formatKg(l.weightKg), sub: `開始時比 ${formatPercentChange(l.weightKg, s?.weightKg)}` },
+    { label: "体脂肪率", value: `${formatDecimal(l.bodyFatPercent)} %`, sub: `開始時 ${formatDecimal(s?.bodyFatPercent)} %` },
+    { label: "筋肉量", value: formatKg(l.muscleMassKg), sub: `開始時比 ${formatPercentChange(l.muscleMassKg, s?.muscleMassKg)}` },
+    { label: "内臓脂肪レベル", value: formatInteger(l.visceralFatLevel), sub: `開始時 ${formatInteger(s?.visceralFatLevel)}` },
+    { label: `中間目標 ${formatInteger(goals.value.interimGoalKg)} kgまで`, value: formatKg(remainingToGoal(l.weightKg, goals.value.interimGoalKg)), sub: `進捗 ${formatDecimal(goalProgressPercent(s?.weightKg, l.weightKg, goals.value.interimGoalKg), 0)} %` },
+    { label: `最終目標 ${formatInteger(goals.value.finalGoalKg)} kgまで`, value: formatKg(remainingToGoal(l.weightKg, goals.value.finalGoalKg)), sub: `進捗 ${formatDecimal(goalProgressPercent(s?.weightKg, l.weightKg, goals.value.finalGoalKg), 0)} %` },
+    { label: "直近7日 平均摂取", value: `${formatInteger(average(nutrition7.value.map((r) => r.intakeKcal)))} kcal`, sub: `目安 ${formatInteger(goals.value.intakeGuidelineKcal)} kcal` },
+    { label: "直近7日 平均収支", value: `${formatInteger(average(nutrition7.value.map((r) => r.balanceKcal)))} kcal`, sub: "マイナスが減量方向" },
+    { label: "直近7日 平均歩数", value: `${formatInteger(average(steps7.value.map((r) => r.steps)))} 歩`, sub: "" },
+  ];
+});
+
+const finalProgress = computed(() =>
+  goalProgressPercent(start.value?.weightKg, latest.value?.weightKg, goals.value.finalGoalKg),
+);
+
+const plan = computed(() => data.value?.medicationPlan?.[0] ?? null);
+const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
+</script>
+
+<template>
+  <div v-if="data">
+    <div class="card-grid">
+      <section v-for="card in cards" :key="card.label" class="card">
+        <h2>{{ card.label }}</h2>
+        <p class="amount-value">{{ card.value }}</p>
+        <p v-if="card.sub" class="meta">{{ card.sub }}</p>
+      </section>
+    </div>
+
+    <section class="chart-card" style="margin-bottom: 16px">
+      <h2 class="section-title">体重の推移</h2>
+      <LineChart
+        :points="weightPoints"
+        unit="kg"
+        :goal-value="goals.finalGoalKg"
+        :goal-label="`最終目標 ${goals.finalGoalKg}kg`"
+      />
+      <p class="meta" style="margin-top: 8px">
+        最終目標までの進捗
+        <span class="amount-value">{{ formatDecimal(finalProgress, 0) }}%</span>
+      </p>
+      <div class="progress-track">
+        <div class="progress-fill" :style="{ width: `${finalProgress ?? 0}%` }"></div>
+      </div>
+    </section>
+
+    <section v-if="plan" class="table-wrap">
+      <h2 class="section-title">投薬</h2>
+      <p>
+        {{ plan.name }}（{{ plan.generic_name }}）{{ plan.dose_mg }}mg / {{ plan.frequency }}（{{ plan.scheduled_weekday }}）
+      </p>
+      <p class="meta">
+        開始：{{ plan.started_on }}（{{ plan.started_on_precision }}） / 期間：{{ plan.planned_course }} / 終了予定：{{ plan.planned_end }}
+      </p>
+      <table v-if="log.length" style="margin-top: 8px">
+        <thead>
+          <tr><th>日付</th><th>薬剤</th><th>用量</th><th>状態</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in log" :key="row.date">
+            <td>{{ row.date }}</td>
+            <td>{{ row.medication }}</td>
+            <td>{{ row.dose_mg }} mg</td>
+            <td>{{ row.status }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</template>
