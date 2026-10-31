@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { RouterLink, RouterView } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useUiStore } from "@/stores/ui";
@@ -33,6 +33,16 @@ const shareExpiresLabel = computed(() => {
     ? ""
     : date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
 });
+
+// Doctor share view is always open: suspend privacy masking (the owner's
+// saved preference is untouched and applies again outside share mode).
+watch(
+  () => healthStore.shareMode,
+  (shareMode) => {
+    uiStore.setPrivacySuspended(shareMode);
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -48,7 +58,7 @@ const shareExpiresLabel = computed(() => {
           <RouterLink to="/labs">検査結果</RouterLink>
         </nav>
         <div class="header-buttons">
-          <button class="theme-toggle" type="button" @click="uiStore.togglePrivacy">
+          <button v-if="!healthStore.shareMode" class="theme-toggle" type="button" @click="uiStore.togglePrivacy">
             {{ privacyLabel }}
           </button>
           <button class="theme-toggle" type="button" @click="uiStore.toggleTheme">

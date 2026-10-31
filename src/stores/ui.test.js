@@ -48,4 +48,22 @@ describe("ui store", () => {
     expect(localStorage.getItem("health-private")).toBe("off");
     expect(document.documentElement.hasAttribute("data-private")).toBe(false);
   });
+
+  it("suspends privacy masking without changing the saved preference", () => {
+    localStorage.setItem("health-private", "on");
+    setActivePinia(createPinia());
+    const store = useUiStore();
+    store.applyToDocument();
+    expect(document.documentElement.getAttribute("data-private")).toBe("on");
+
+    store.setPrivacySuspended(true);
+    expect(store.privacySuspended).toBe(true);
+    expect(store.privateMode).toBe(true);
+    expect(localStorage.getItem("health-private")).toBe("on");
+    expect(document.documentElement.hasAttribute("data-private")).toBe(false);
+
+    store.setPrivacySuspended(false);
+    expect(store.privacySuspended).toBe(false);
+    expect(document.documentElement.getAttribute("data-private")).toBe("on");
+  });
 });

@@ -11,6 +11,9 @@ export const useUiStore = defineStore("ui", {
   state: () => ({
     theme: readStored(THEME_KEY) === "light" ? "light" : "dark",
     privateMode: readStored(PRIVACY_KEY) === "on",
+    // Doctor share view: privacy is suspended (not persisted) so numbers
+    // always stay visible while a share link is being viewed.
+    privacySuspended: false,
   }),
   getters: {
     themeLabel: (state) => (state.theme === "light" ? "ダーク" : "ライト"),
@@ -24,11 +27,15 @@ export const useUiStore = defineStore("ui", {
       } else {
         root.removeAttribute("data-theme");
       }
-      if (this.privateMode) {
+      if (this.privateMode && !this.privacySuspended) {
         root.setAttribute("data-private", "on");
       } else {
         root.removeAttribute("data-private");
       }
+    },
+    setPrivacySuspended(suspended) {
+      this.privacySuspended = Boolean(suspended);
+      this.applyToDocument();
     },
     toggleTheme() {
       this.theme = this.theme === "light" ? "dark" : "light";
