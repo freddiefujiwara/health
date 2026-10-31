@@ -99,6 +99,7 @@ function render() {
       .attr("stroke-dasharray", "5 4");
     svg
       .append("text")
+      .attr("class", "amount-value")
       .attr("x", w - margin.right)
       .attr("y", y(props.goalValue) - 5)
       .attr("text-anchor", "end")
