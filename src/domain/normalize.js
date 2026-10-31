@@ -95,6 +95,25 @@ function normalizePeriodSummaries(rows) {
     .sort((a, b) => (a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0));
 }
 
+function normalizeLabResults(rows) {
+  return rows
+    .filter((row) => row && row.date && row.item)
+    .map((row) => ({
+      date: row.date,
+      panel: row.panel ?? "",
+      category: row.category ?? "",
+      item: row.item,
+      value: row.value ?? "",
+      valueNumber: toNumber(row.value),
+      flag: row.flag ?? "",
+      unit: row.unit ?? "",
+      reference: row.reference ?? "",
+      source: row.source ?? "",
+      notes: row.notes ?? "",
+    }))
+    .sort(byDateAsc);
+}
+
 function normalizeGoals(rows) {
   const goals = {
     startWeightKg: null,
@@ -150,6 +169,7 @@ export function normalizeHealth(payload) {
     steps: normalizeSteps(source.steps ?? []),
     segments: normalizeSegments(source.body_segments ?? []),
     periodSummaries: normalizePeriodSummaries(source.period_summaries ?? []),
+    labResults: normalizeLabResults(source.lab_results ?? []),
     medicationPlan: source.medication_plan ?? [],
     medicationLog: source.medication_log ?? [],
     goals: normalizeGoals(source.goals_settings ?? []),

@@ -125,3 +125,32 @@ describe("normalizeHealth", () => {
     expect(result.medicationLog).toHaveLength(1);
   });
 });
+
+describe("normalizeHealth lab results", () => {
+  it("normalizes lab results with numeric conversion", () => {
+    const result = normalizeHealth({
+      lab_results: [
+        { date: "2026-08-20", panel: "血液検査", category: "肝機能", item: "γ-GTP", value: "178", flag: "H", unit: "IU/L", reference: "13-64", source: "検査結果報告書（皮膚科）", notes: "" },
+        { date: "2026-09-17", panel: "尿検査", category: "尿定性", item: "色調", value: "淡黄色" },
+        { date: "2026-09-17", item: "pH", value: 6.0 },
+        { date: "2026-09-17", item: "混濁", value: null },
+        { panel: "血液検査", item: "no-date" },
+        { date: "2026-08-20", panel: "血液検査" },
+        null,
+      ],
+    });
+    expect(result.labResults).toHaveLength(4);
+    expect(result.labResults[2].panel).toBe("");
+    expect(result.labResults[2].category).toBe("");
+    expect(result.labResults[3].value).toBe("");
+    expect(result.labResults[0].valueNumber).toBe(178);
+    expect(result.labResults[0].flag).toBe("H");
+    expect(result.labResults[1].valueNumber).toBeNull();
+    expect(result.labResults[1].category).toBe("尿定性");
+    expect(result.labResults[1].unit).toBe("");
+  });
+
+  it("defaults labResults to an empty array", () => {
+    expect(normalizeHealth({}).labResults).toEqual([]);
+  });
+});
