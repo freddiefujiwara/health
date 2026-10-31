@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import * as d3 from "d3";
+import { formatChartValue } from "@/domain/format";
 
 const props = defineProps({
   // [{ date: 'YYYY-MM-DD', value: number|null }]
@@ -17,7 +18,22 @@ const props = defineProps({
 
 const root = ref(null);
 const width = ref(320);
+const tooltip = ref(null);
 let resizeObserver = null;
+
+function showTooltip(datum, cx, cy) {
+  tooltip.value = {
+    left: cx,
+    top: cy,
+    below: cy < 76,
+    dateText: datum.date.replaceAll("-", "/"),
+    valueText: `${formatChartValue(datum.value)}${props.unit}`,
+  };
+}
+
+function hideTooltip() {
+  tooltip.value = null;
+}
 
 const validPoints = computed(() =>
   props.points
@@ -30,6 +46,7 @@ function render() {
   if (!el) {
     return;
   }
+  hideTooltip();
   const w = Math.max(260, width.value);
   const h = props.height;
   const margin = { top: 12, right: 12, bottom: 24, left: 48 };
@@ -114,6 +131,7 @@ function render() {
       .text(props.guidelineLabel || `${props.guidelineValue}${props.unit}`);
   }
 
+  const barTop = (d) => (props.signed ? Math.min(y(d.value), y(0)) : y(d.value));
   svg
     .selectAll("rect.bar")
     .data(data)
@@ -121,11 +139,26 @@ function render() {
     .attr("class", "bar")
     .attr("x", (d) => x(d.date))
     .attr("width", x.bandwidth())
-    .attr("y", (d) => (props.signed ? Math.min(y(d.value), y(0)) : y(d.value)))
+    .attr("y", barTop)
     .attr("height", (d) => (props.signed ? Math.abs(y(d.value) - y(0)) : y(0) - y(d.value)))
-    .attr("fill", (d) => (props.signed && d.value < 0 ? props.negativeColor : props.color))
-    .append("title")
-    .text((d) => `${d.date}: ${d.value}${props.unit}`);
+    .attr("fill", (d) => (props.signed && d.value < 0 ? props.negativeColor : props.color));
+
+  svg
+    .selectAll("rect.hit")
+    .data(data)
+    .join("rect")
+    .attr("class", "hit")
+    .attr("x", (d) => x(d.date))
+    .attr("width", x.bandwidth())
+    .attr("y", margin.top)
+    .attr("height", h - margin.bottom - margin.top)
+    .attr("fill", "transparent")
+    .style("cursor", "pointer")
+    .on("pointerenter pointerdown", (event, d) => {
+      showTooltip(d, x(d.date) + x.bandwidth() / 2, barTop(d));
+    });
+
+  svg.on("pointerleave", hideTooltip);
 }
 
 onMounted(() => {
@@ -153,11 +186,57 @@ watch(
 </script>
 
 <template>
-  <div ref="root" class="bar-chart"></div>
+  <div class="chart-wrap">
+    <div ref="root" class="bar-chart"></div>
+    <div
+      v-if="tooltip"
+      class="chart-tooltip"
+      :class="{ below: tooltip.below }"
+      :style="{ left: `${tooltip.left}px`, top: `${tooltip.top}px` }"
+    >
+      <span class="tt-date">{{ tooltip.dateText }}</span>
+      <span class="tt-value" :class="{ 'amount-value': hideAxisInPrivate }">{{ tooltip.valueText }}</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+.chart-wrap {
+  position: relative;
+}
+
 .bar-chart {
   width: 100%;
+}
+
+.chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  background: var(--surface-elevated, #1e293b);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.chart-tooltip.below {
+  transform: translate(-50%, 14px);
+}
+
+.tt-date {
+  display: block;
+  color: var(--muted, #94a3b8);
+}
+
+.tt-value {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
 }
 </style>

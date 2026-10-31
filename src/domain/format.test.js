@@ -5,7 +5,9 @@ import {
   formatKcal,
   formatKg,
   formatPercentChange,
+  formatChartValue,
   formatSigned,
+
 } from "./format";
 
 describe("format helpers", () => {
@@ -35,6 +37,16 @@ describe("format helpers", () => {
     expect(formatSigned(0)).toBe("0");
     expect(formatSigned(null)).toBe("-");
     expect(formatSigned(undefined)).toBe("-");
+  });
+
+  it("formats chart tooltip values", () => {
+    expect(formatChartValue(11529)).toBe("11,529");
+    expect(formatChartValue(91.5)).toBe("91.5");
+    expect(formatChartValue(0.71)).toBe("0.71");
+    expect(formatChartValue(-936)).toBe("-936");
+    expect(formatChartValue(null)).toBe("-");
+    expect(formatChartValue(Number.NaN)).toBe("-");
+    expect(formatChartValue("5")).toBe("-");
   });
 
   it("formats percent change", () => {

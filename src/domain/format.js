@@ -41,3 +41,17 @@ export function formatPercentChange(current, baseline) {
   const sign = pct > 0 ? "+" : "";
   return `${sign}${pct.toFixed(1)}%`;
 }
+
+/** Tooltip value: integers grouped, decimals up to 2 places. */
+export function formatChartValue(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "-";
+  }
+  if (Number.isInteger(value)) {
+    return value.toLocaleString("ja-JP");
+  }
+  return value.toLocaleString("ja-JP", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
