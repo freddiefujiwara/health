@@ -8,6 +8,8 @@ const props = defineProps({
   color: { type: String, default: "#3b82f6" },
   unit: { type: String, default: "" },
   goalValue: { type: Number, default: null },
+  projectionPoints: { type: Array, default: () => [] },
+  projectionColor: { type: String, default: "#94a3b8" },
   goalLabel: { type: String, default: "" },
   height: { type: Number, default: 220 },
 });
@@ -18,6 +20,12 @@ let resizeObserver = null;
 
 const validPoints = computed(() =>
   props.points
+    .filter((p) => p.value !== null && p.value !== undefined)
+    .map((p) => ({ date: new Date(`${p.date}T00:00:00`), value: p.value })),
+);
+
+const validProjection = computed(() =>
+  props.projectionPoints
     .filter((p) => p.value !== null && p.value !== undefined)
     .map((p) => ({ date: new Date(`${p.date}T00:00:00`), value: p.value })),
 );
@@ -50,13 +58,13 @@ function render() {
     return;
   }
 
-  const values = data.map((d) => d.value);
+  const values = data.map((d) => d.value).concat(validProjection.value.map((d) => d.value));
   if (props.goalValue !== null) {
     values.push(props.goalValue);
   }
   const x = d3
     .scaleTime()
-    .domain(d3.extent(data, (d) => d.date))
+    .domain(d3.extent(data.concat(validProjection.value), (d) => d.date))
     .range([margin.left, w - margin.right]);
   const y = d3
     .scaleLinear()
@@ -72,6 +80,7 @@ function render() {
     .attr("fill", "#94a3b8");
   svg
     .append("g")
+    .attr("class", "chart-y-axis")
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5))
     .selectAll("text")
@@ -108,6 +117,17 @@ function render() {
     .attr("stroke", props.color)
     .attr("stroke-width", 2)
     .attr("d", line);
+  if (validProjection.value.length > 1) {
+    svg
+      .append("path")
+      .datum(validProjection.value)
+      .attr("fill", "none")
+      .attr("stroke", props.projectionColor)
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", "6 4")
+      .attr("d", line);
+  }
+
   svg
     .selectAll("circle.point")
     .data(data)
@@ -139,7 +159,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => [props.points, props.goalValue, props.color],
+  () => [props.points, props.projectionPoints, props.goalValue, props.color],
   () => render(),
   { deep: true },
 );

@@ -63,3 +63,64 @@ export function goalProgressPercent(startKg, latestKg, goalKg) {
   const pct = ((startKg - latestKg) / (startKg - goalKg)) * 100;
   return Math.min(100, Math.max(0, pct));
 }
+
+/** Energy equivalent used for weight prediction: 7,700 kcal ≈ 1 kg of body fat. */
+export const KCAL_PER_KG = 7700;
+
+export function addDays(dateStr, days) {
+  const ms = Date.parse(dateStr) + days * 24 * 60 * 60 * 1000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+/** Predicted weight after `days` days at a constant daily calorie balance. */
+export function predictWeightKg(latestWeightKg, avgDailyBalanceKcal, days) {
+  if (
+    latestWeightKg === null || latestWeightKg === undefined
+    || avgDailyBalanceKcal === null || avgDailyBalanceKcal === undefined
+  ) {
+    return null;
+  }
+  return latestWeightKg + (avgDailyBalanceKcal * days) / KCAL_PER_KG;
+}
+
+/** Days needed to reach a goal weight at a constant daily balance (null when not reachable). */
+export function daysToGoalWeight(latestWeightKg, goalKg, avgDailyBalanceKcal) {
+  if (
+    latestWeightKg === null || latestWeightKg === undefined
+    || goalKg === null || goalKg === undefined
+    || avgDailyBalanceKcal === null || avgDailyBalanceKcal === undefined
+  ) {
+    return null;
+  }
+  if (latestWeightKg <= goalKg) {
+    return 0;
+  }
+  if (avgDailyBalanceKcal >= 0) {
+    return null;
+  }
+  return Math.ceil(((latestWeightKg - goalKg) * KCAL_PER_KG) / -avgDailyBalanceKcal);
+}
+
+/** Estimated date on which a goal weight is reached (null when not reachable). */
+export function goalReachDate(fromDate, latestWeightKg, goalKg, avgDailyBalanceKcal) {
+  const days = daysToGoalWeight(latestWeightKg, goalKg, avgDailyBalanceKcal);
+  if (days === null) {
+    return null;
+  }
+  return addDays(fromDate, days);
+}
+
+/** Projection points from the latest measurement into the future. */
+export function projectionPoints(latest, avgDailyBalanceKcal, horizonDays = 90, stepDays = 15) {
+  if (!latest || avgDailyBalanceKcal === null || avgDailyBalanceKcal === undefined) {
+    return [];
+  }
+  const points = [{ date: latest.date, value: latest.weightKg }];
+  for (let d = stepDays; d <= horizonDays; d += stepDays) {
+    points.push({
+      date: addDays(latest.date, d),
+      value: predictWeightKg(latest.weightKg, avgDailyBalanceKcal, d),
+    });
+  }
+  return points;
+}

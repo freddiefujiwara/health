@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  addDays,
   average,
+  daysToGoalWeight,
   delta,
   firstOf,
   goalProgressPercent,
+  goalReachDate,
   latestOf,
+  predictWeightKg,
+  projectionPoints,
   recentRows,
   remainingToGoal,
   sum,
@@ -55,5 +60,46 @@ describe("stats helpers", () => {
     expect(goalProgressPercent(100, null, 80)).toBeNull();
     expect(goalProgressPercent(100, 90, null)).toBeNull();
     expect(goalProgressPercent(80, 80, 80)).toBeNull();
+  });
+});
+
+describe("weight prediction", () => {
+  it("adds days to a date", () => {
+    expect(addDays("2026-10-17", 30)).toBe("2026-11-16");
+    expect(addDays("2026-12-30", 3)).toBe("2027-01-02");
+  });
+
+  it("predicts weight from an average daily balance", () => {
+    expect(predictWeightKg(90, -770, 10)).toBeCloseTo(89);
+    expect(predictWeightKg(90, 770, 10)).toBeCloseTo(91);
+    expect(predictWeightKg(null, -770, 10)).toBeNull();
+    expect(predictWeightKg(90, null, 10)).toBeNull();
+    expect(predictWeightKg(90, undefined, 10)).toBeNull();
+  });
+
+  it("computes days to a goal weight", () => {
+    expect(daysToGoalWeight(91.5, 90, -750)).toBe(16);
+    expect(daysToGoalWeight(89, 90, -750)).toBe(0);
+    expect(daysToGoalWeight(91.5, 90, 0)).toBeNull();
+    expect(daysToGoalWeight(91.5, 90, 100)).toBeNull();
+    expect(daysToGoalWeight(null, 90, -750)).toBeNull();
+    expect(daysToGoalWeight(91.5, null, -750)).toBeNull();
+    expect(daysToGoalWeight(91.5, 90, null)).toBeNull();
+  });
+
+  it("computes the goal reach date", () => {
+    expect(goalReachDate("2026-10-17", 91.5, 90, -750)).toBe("2026-11-02");
+    expect(goalReachDate("2026-10-17", 91.5, 90, 0)).toBeNull();
+    expect(goalReachDate("2026-10-17", 89, 90, -750)).toBe("2026-10-17");
+  });
+
+  it("builds projection points", () => {
+    const pts = projectionPoints({ date: "2026-10-17", weightKg: 91.5 }, -770, 30, 15);
+    expect(pts).toHaveLength(3);
+    expect(pts[0]).toEqual({ date: "2026-10-17", value: 91.5 });
+    expect(pts[2].date).toBe("2026-11-16");
+    expect(pts[2].value).toBeCloseTo(88.5);
+    expect(projectionPoints(null, -770)).toEqual([]);
+    expect(projectionPoints({ date: "2026-10-17", weightKg: 91.5 }, null)).toEqual([]);
   });
 });
