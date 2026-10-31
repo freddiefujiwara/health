@@ -39,10 +39,10 @@ const cards = computed(() => {
   const s = start.value;
   return [
     { label: `最新体重（${l.date}）`, value: formatKg(l.weightKg), sub: `開始時比 ${formatPercentChange(l.weightKg, s?.weightKg)}` },
-    { label: "体脂肪率", value: `${formatDecimal(l.bodyFatPercent)} %`, sub: `開始時 ${formatDecimal(s?.bodyFatPercent)} %` },
+    { label: "体脂肪率", value: `${formatDecimal(l.bodyFatPercent)} %`, sub: `開始時 ${formatDecimal(s?.bodyFatPercent)} %`, public: true },
     { label: "筋肉量", value: formatKg(l.muscleMassKg), sub: `開始時比 ${formatPercentChange(l.muscleMassKg, s?.muscleMassKg)}` },
-    { label: "内臓脂肪レベル", value: formatInteger(l.visceralFatLevel), sub: `開始時 ${formatInteger(s?.visceralFatLevel)}` },
-    { labelParts: ["中間目標 ", { mask: formatInteger(goals.value.interimGoalKg) }, " kgまで"], value: formatKg(remainingToGoal(l.weightKg, goals.value.interimGoalKg)), sub: `進捗 ${formatDecimal(goalProgressPercent(s?.weightKg, l.weightKg, goals.value.interimGoalKg), 0)} %` },
+    { label: "内臓脂肪レベル", value: formatInteger(l.visceralFatLevel), sub: `開始時 ${formatInteger(s?.visceralFatLevel)}`, public: true },
+    { labelParts: ["中間目標 ", { mask: formatInteger(goals.value.interimGoalKg) }, " kgまで"], value: formatKg(remainingToGoal(l.weightKg, goals.value.interimGoalKg)), sub: `進捗 ${formatDecimal(goalProgressPercent(s?.weightKg, l.weightKg, goals.value.interimGoalKg), 0)} %`, public: true },
     { labelParts: ["最終目標 ", { mask: formatInteger(goals.value.finalGoalKg) }, " kgまで"], value: formatKg(remainingToGoal(l.weightKg, goals.value.finalGoalKg)), sub: `進捗 ${formatDecimal(goalProgressPercent(s?.weightKg, l.weightKg, goals.value.finalGoalKg), 0)} %` },
     { label: "直近7日 平均摂取", value: `${formatInteger(average(nutrition7.value.map((r) => r.intakeKcal)))} kcal`, sub: `目安 ${formatInteger(goals.value.intakeGuidelineKcal)} kcal`, public: true },
     { label: "直近7日 平均収支", value: `${formatInteger(average(nutrition7.value.map((r) => r.balanceKcal)))} kcal`, sub: "マイナスが減量方向", public: true },
@@ -100,7 +100,7 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
         hide-axis-in-private
         unit="kg"
         :goal-value="goals.finalGoalKg"
-        :goal-label="`最終目標 ${goals.finalGoalKg}kg`"
+        :goal-label-parts="['最終目標 ', { mask: formatInteger(goals.finalGoalKg) }, 'kg']"
       />
       <p class="meta" style="margin-top: 8px">
         最終目標までの進捗

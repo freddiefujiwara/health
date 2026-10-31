@@ -13,12 +13,15 @@ const props = defineProps({
   projectionColor: { type: String, default: "#94a3b8" },
   hideAxisInPrivate: { type: Boolean, default: false },
   goalLabel: { type: String, default: "" },
+  // [{ text } | { mask }] — masked parts render as .privacy-mask spans (HTML overlay).
+  goalLabelParts: { type: Array, default: null },
   height: { type: Number, default: 220 },
 });
 
 const root = ref(null);
 const width = ref(320);
 const tooltip = ref(null);
+const goalLabelPos = ref(null);
 let resizeObserver = null;
 
 function showTooltip(datum, cx, cy) {
@@ -53,6 +56,7 @@ function render() {
     return;
   }
   hideTooltip();
+  goalLabelPos.value = null;
   const w = Math.max(260, width.value);
   const h = props.height;
   const margin = { top: 12, right: 12, bottom: 24, left: 44 };
@@ -123,15 +127,9 @@ function render() {
       .attr("y2", y(props.goalValue))
       .attr("stroke", "#f59e0b")
       .attr("stroke-dasharray", "5 4");
-    svg
-      .append("text")
-      .attr("class", "amount-value")
-      .attr("x", w - margin.right)
-      .attr("y", y(props.goalValue) - 5)
-      .attr("text-anchor", "end")
-      .attr("fill", "#f59e0b")
-      .attr("font-size", 11)
-      .text(props.goalLabel || `${props.goalValue}${props.unit}`);
+    // The label is an HTML overlay (see template): SVG <text> cannot be
+    // reliably blurred by CSS filter on iOS Safari, which broke masking.
+    goalLabelPos.value = { left: w - margin.right, top: y(props.goalValue) };
   }
 
   const line = d3
@@ -225,6 +223,16 @@ watch(
   <div class="chart-wrap">
     <div ref="root" class="line-chart"></div>
     <div
+      v-if="goalLabelPos && (goalLabelParts || goalLabel)"
+      class="goal-label"
+      :style="{ left: `${goalLabelPos.left}px`, top: `${goalLabelPos.top}px` }"
+    >
+      <template v-if="goalLabelParts">
+        <template v-for="(part, i) in goalLabelParts" :key="i"><span v-if="typeof part === 'object'" class="privacy-mask">{{ part.mask }}</span><template v-else>{{ part }}</template></template>
+      </template>
+      <template v-else>{{ goalLabel }}</template>
+    </div>
+    <div
       v-if="tooltip"
       class="chart-tooltip"
       :class="{ below: tooltip.below }"
@@ -263,6 +271,15 @@ watch(
 
 .chart-tooltip.below {
   transform: translate(-50%, 14px);
+}
+
+.goal-label {
+  position: absolute;
+  transform: translate(-100%, -140%);
+  color: #f59e0b;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .tt-date {

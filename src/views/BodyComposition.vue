@@ -36,7 +36,7 @@ const latestSegments = computed(() =>
       </section>
       <section class="chart-card">
         <h2 class="section-title">体脂肪率（%）</h2>
-        <LineChart :points="fatPoints" unit="%" color="#f59e0b" hide-axis-in-private />
+        <LineChart :points="fatPoints" unit="%" color="#f59e0b" />
       </section>
       <section class="chart-card">
         <h2 class="section-title">筋肉量（kg）</h2>

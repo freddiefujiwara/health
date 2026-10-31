@@ -47,6 +47,33 @@ describe("line chart tooltip", () => {
     expect(wrapper.find(".chart-tooltip .tt-value").classes()).toContain("amount-value");
   });
 
+  it("renders the goal label as an HTML overlay with a masked number part", async () => {
+    const wrapper = mount(LineChart, {
+      props: {
+        points,
+        unit: "kg",
+        goalValue: 80,
+        goalLabelParts: ["最終目標 ", { mask: "80" }, "kg"],
+      },
+    });
+    await wrapper.vm.$nextTick();
+    const label = wrapper.find(".goal-label");
+    expect(label.exists()).toBe(true);
+    expect(label.text()).toBe("最終目標 80kg");
+    expect(label.find(".privacy-mask").text()).toBe("80");
+    // No SVG text may carry the goal value (CSS blur does not apply to SVG text on iOS Safari).
+    expect(wrapper.find("svg text.amount-value").exists()).toBe(false);
+  });
+
+  it("falls back to the plain goalLabel string when no parts are given", async () => {
+    const wrapper = mount(LineChart, {
+      props: { points, unit: "kg", goalValue: 80, goalLabel: "最終目標 80kg" },
+    });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find(".goal-label").text()).toBe("最終目標 80kg");
+    expect(wrapper.find(".goal-label .privacy-mask").exists()).toBe(false);
+  });
+
   it("shows the empty message without hit areas when there is no data", () => {
     const wrapper = mount(LineChart, { props: { points: [] } });
     expect(wrapper.text()).toContain("データがありません");
