@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import * as d3 from "d3";
+import { formatChartValue } from "@/domain/format";
 
 const props = defineProps({
   // [{ date: 'YYYY-MM-DD', value: number|null }]
@@ -17,7 +18,22 @@ const props = defineProps({
 
 const root = ref(null);
 const width = ref(320);
+const tooltip = ref(null);
 let resizeObserver = null;
+
+function showTooltip(datum, cx, cy) {
+  tooltip.value = {
+    left: cx,
+    top: cy,
+    below: cy < 76,
+    dateText: d3.timeFormat("%Y/%m/%d")(datum.date),
+    valueText: `${formatChartValue(datum.value)}${props.unit}`,
+  };
+}
+
+function hideTooltip() {
+  tooltip.value = null;
+}
 
 const validPoints = computed(() =>
   props.points
@@ -36,6 +52,7 @@ function render() {
   if (!el) {
     return;
   }
+  hideTooltip();
   const w = Math.max(260, width.value);
   const h = props.height;
   const margin = { top: 12, right: 12, bottom: 24, left: 44 };
@@ -147,9 +164,37 @@ function render() {
     .attr("cx", (d) => x(d.date))
     .attr("cy", (d) => y(d.value))
     .attr("r", 3.5)
-    .attr("fill", props.color)
-    .append("title")
-    .text((d) => `${d3.timeFormat("%Y/%m/%d")(d.date)}: ${d.value}${props.unit}`);
+    .attr("fill", props.color);
+
+  const focus = svg
+    .append("circle")
+    .attr("class", "focus-ring")
+    .attr("r", 7)
+    .attr("fill", "none")
+    .attr("stroke", "#e2e8f0")
+    .attr("stroke-width", 2)
+    .style("opacity", 0)
+    .style("pointer-events", "none");
+
+  svg
+    .selectAll("circle.hit")
+    .data(data)
+    .join("circle")
+    .attr("class", "hit")
+    .attr("cx", (d) => x(d.date))
+    .attr("cy", (d) => y(d.value))
+    .attr("r", 16)
+    .attr("fill", "transparent")
+    .style("cursor", "pointer")
+    .on("pointerenter pointerdown", (event, d) => {
+      focus.attr("cx", x(d.date)).attr("cy", y(d.value)).style("opacity", 1);
+      showTooltip(d, x(d.date), y(d.value));
+    });
+
+  svg.on("pointerleave", () => {
+    focus.style("opacity", 0);
+    hideTooltip();
+  });
 }
 
 onMounted(() => {
@@ -177,11 +222,57 @@ watch(
 </script>
 
 <template>
-  <div ref="root" class="line-chart"></div>
+  <div class="chart-wrap">
+    <div ref="root" class="line-chart"></div>
+    <div
+      v-if="tooltip"
+      class="chart-tooltip"
+      :class="{ below: tooltip.below }"
+      :style="{ left: `${tooltip.left}px`, top: `${tooltip.top}px` }"
+    >
+      <span class="tt-date">{{ tooltip.dateText }}</span>
+      <span class="tt-value" :class="{ 'amount-value': hideAxisInPrivate }">{{ tooltip.valueText }}</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+.chart-wrap {
+  position: relative;
+}
+
 .line-chart {
   width: 100%;
+}
+
+.chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  background: var(--surface-elevated, #1e293b);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.chart-tooltip.below {
+  transform: translate(-50%, 14px);
+}
+
+.tt-date {
+  display: block;
+  color: var(--muted, #94a3b8);
+}
+
+.tt-value {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
 }
 </style>
