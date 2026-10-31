@@ -122,15 +122,16 @@ onUnmounted(() => {
           class="share-url-input"
           type="text"
           readonly
+          :disabled="busy"
           :value="shareUrl"
           aria-label="閲覧用URL"
           @focus="(e) => e.target.select()"
         >
-        <button class="theme-toggle" type="button" @click="copyUrl">
+        <button class="theme-toggle" type="button" :disabled="busy" @click="copyUrl">
           {{ copied ? "コピーしました" : "URLをコピー" }}
         </button>
       </p>
-      <p v-if="qrDataUrl && secondsLeft > 0">
+      <p v-if="qrDataUrl && secondsLeft > 0" :style="busy ? { opacity: 0.4 } : {}">
         <img :src="qrDataUrl" alt="閲覧用URLのQRコード" width="220" height="220">
       </p>
       <p>
@@ -159,6 +160,10 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
+}
+
+.share-url-input:disabled {
+  opacity: 0.5;
 }
 
 button:disabled {
