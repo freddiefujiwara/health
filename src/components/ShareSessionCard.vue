@@ -7,6 +7,7 @@ import { buildShareUrl, formatShareRemaining, shareSecondsLeft } from "@/domain/
 const store = useHealthStore();
 
 const busy = ref(false);
+const busyAction = ref("");
 const actionError = ref("");
 const copied = ref(false);
 const qrDataUrl = ref("");
@@ -51,6 +52,7 @@ watch(shareUrl, updateQr);
 
 async function issue() {
   busy.value = true;
+  busyAction.value = "issue";
   actionError.value = "";
   copied.value = false;
   try {
@@ -59,11 +61,13 @@ async function issue() {
     actionError.value = error?.message ?? "発行に失敗しました";
   } finally {
     busy.value = false;
+    busyAction.value = "";
   }
 }
 
 async function revoke() {
   busy.value = true;
+  busyAction.value = "revoke";
   actionError.value = "";
   try {
     await store.revokeShare();
@@ -71,6 +75,7 @@ async function revoke() {
     actionError.value = error?.message ?? "無効化に失敗しました";
   } finally {
     busy.value = false;
+    busyAction.value = "";
   }
 }
 
@@ -97,10 +102,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="chart-card" style="margin-top: 16px">
+  <section class="chart-card" style="margin-top: 16px" :aria-busy="busy">
     <h2 class="section-title">医師向け一時閲覧リンク</h2>
     <p class="meta">
       ログイン不要で30分間だけデータを閲覧できるURLを発行します。新しいURLを発行すると、前のURLは無効になります。この画面を閉じると発行したURLは再表示できません。
+    </p>
+    <p v-if="busy" class="meta busy-note" role="status">
+      <span class="spinner" aria-hidden="true" />サーバーと通信しています…
     </p>
     <p v-if="actionError" class="error">{{ actionError }}</p>
 
@@ -127,16 +135,16 @@ onUnmounted(() => {
       </p>
       <p>
         <button class="theme-toggle" type="button" :disabled="busy" @click="issue">
-          新しいURLを発行し直す
+          <span v-if="busyAction === 'issue'" class="spinner" aria-hidden="true" />{{ busyAction === "issue" ? "発行中…" : "新しいURLを発行し直す" }}
         </button>
         <button class="theme-toggle" type="button" :disabled="busy" @click="revoke">
-          今すぐ無効化する
+          <span v-if="busyAction === 'revoke'" class="spinner" aria-hidden="true" />{{ busyAction === "revoke" ? "無効化中…" : "今すぐ無効化する" }}
         </button>
       </p>
     </template>
     <p v-else>
       <button class="theme-toggle" type="button" :disabled="busy" @click="issue">
-        30分間有効な閲覧用URLを発行
+        <span v-if="busyAction === 'issue'" class="spinner" aria-hidden="true" />{{ busyAction === "issue" ? "発行中…" : "30分間有効な閲覧用URLを発行" }}
       </button>
     </p>
   </section>
@@ -151,5 +159,32 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: share-spin 0.8s linear infinite;
+}
+
+.busy-note .spinner {
+  margin-right: 8px;
+}
+
+@keyframes share-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
