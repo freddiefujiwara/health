@@ -5,6 +5,7 @@ import { storeToRefs } from "pinia";
 import { useUiStore } from "@/stores/ui";
 import { useHealthData } from "@/composables/useHealthData";
 import { useAppShellViewModel } from "@/features/app/useAppShellViewModel";
+import { formatShareExpiry } from "@/domain/share";
 
 const uiStore = useUiStore();
 const { themeLabel, privacyLabel } = storeToRefs(uiStore);
@@ -24,15 +25,9 @@ const {
   logout,
 } = useAppShellViewModel();
 
-const shareExpiresLabel = computed(() => {
-  if (!healthStore.shareExpiresAt) {
-    return "";
-  }
-  const date = new Date(healthStore.shareExpiresAt);
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-});
+const shareExpiresLabel = computed(() =>
+  healthStore.shareExpiresAt ? formatShareExpiry(healthStore.shareExpiresAt) : "",
+);
 
 // Doctor share view is always open: suspend privacy masking (the owner's
 // saved preference is untouched and applies again outside share mode).
