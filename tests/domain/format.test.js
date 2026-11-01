@@ -8,7 +8,7 @@ import {
   formatChartValue,
   formatSigned,
 
-} from "./format";
+} from "../../src/domain/format";
 
 describe("format helpers", () => {
   it("formats integers with ja-JP grouping and dash for missing values", () => {

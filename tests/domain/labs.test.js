@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { featuredLabSeries, groupLabResults, labItemSeries, labItemUnit, numericLabItems } from "./labs";
+import { featuredLabSeries, groupLabResults, labItemSeries, labItemUnit, numericLabItems } from "../../src/domain/labs";
 
 const rows = [
   { date: "2026-08-20", panel: "血液検査", item: "γ-GTP", value: 178, valueNumber: 178, unit: "IU/L" },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHealth } from "./normalize";
+import { normalizeHealth } from "../../src/domain/normalize";
 
 describe("normalizeHealth", () => {
   it("returns empty structures for null / empty payloads", () => {

@@ -4,7 +4,7 @@ import {
   formatShareRemaining,
   parseShareToken,
   shareSecondsLeft,
-} from "./share";
+} from "../../src/domain/share";
 
 describe("parseShareToken", () => {
   it("extracts the token from a share fragment", () => {

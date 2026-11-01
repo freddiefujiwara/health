@@ -13,7 +13,7 @@ import {
   recentRows,
   remainingToGoal,
   sum,
-} from "./stats";
+} from "../../src/domain/stats";
 
 describe("stats helpers", () => {
   it("picks first / latest rows", () => {

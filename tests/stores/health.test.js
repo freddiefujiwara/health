@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
-import { HEALTH_API_URL, useHealthStore } from "./health";
+import { HEALTH_API_URL, useHealthStore } from "../../src/stores/health";
 
 const payload = {
   body_composition: [{ date: "2026-07-25", measurement_type: "TANITA", weight_kg: 99.7 }],
