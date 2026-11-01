@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildShareUrl,
+  formatShareExpiry,
   formatShareRemaining,
   parseShareToken,
   shareSecondsLeft,
@@ -90,5 +91,17 @@ describe("formatShareRemaining", () => {
   it("formats expired and unknown", () => {
     expect(formatShareRemaining(0)).toBe("期限切れ");
     expect(formatShareRemaining(null)).toBe("");
+  });
+});
+
+describe("formatShareExpiry", () => {
+  it("formats as YYYYMMDD HH:MM in local time", () => {
+    const iso = new Date(2026, 11, 2, 7, 53).toISOString();
+    expect(formatShareExpiry(iso)).toBe("20261202 07:53");
+  });
+
+  it("returns an empty string for an invalid date", () => {
+    expect(formatShareExpiry("not-a-date")).toBe("");
+    expect(formatShareExpiry("")).toBe("");
   });
 });

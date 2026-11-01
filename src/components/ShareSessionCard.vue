@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import QRCode from "qrcode";
 import { useHealthStore } from "@/stores/health";
-import { buildShareUrl, formatShareRemaining, shareSecondsLeft } from "@/domain/share";
+import { buildShareUrl, formatShareExpiry, formatShareRemaining, shareSecondsLeft } from "@/domain/share";
 
 const store = useHealthStore();
 
@@ -26,15 +26,9 @@ const secondsLeft = computed(() =>
   issued.value ? shareSecondsLeft(issued.value.expiresAt, nowMs.value) : null,
 );
 const remainingLabel = computed(() => formatShareRemaining(secondsLeft.value));
-const expiresLabel = computed(() => {
-  if (!issued.value) {
-    return "";
-  }
-  const date = new Date(issued.value.expiresAt);
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-});
+const expiresLabel = computed(() =>
+  issued.value ? formatShareExpiry(issued.value.expiresAt) : "",
+);
 
 async function updateQr() {
   if (!shareUrl.value) {

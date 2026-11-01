@@ -33,6 +33,17 @@ export function shareSecondsLeft(expiresAt, nowMs) {
   return Math.max(0, Math.ceil((expiresMs - nowMs) / 1000));
 }
 
+/** Expiry label as "20261202 07:53" (local time); "" when invalid. */
+export function formatShareExpiry(expiresAt) {
+  const date = new Date(expiresAt);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const pad = (n) => String(n).padStart(2, "0");
+  const ymd = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
+  return `${ymd} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 /** Human label such as "残り約30日" / "残り約30分" / "残り約1分未満" / "期限切れ". */
 export function formatShareRemaining(seconds) {
   if (seconds === null) {
