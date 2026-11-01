@@ -75,6 +75,13 @@ describe("formatShareRemaining", () => {
     expect(formatShareRemaining(60)).toBe("残り約1分");
   });
 
+  it("formats hours and days", () => {
+    expect(formatShareRemaining(3600)).toBe("残り約1時間");
+    expect(formatShareRemaining(5 * 3600)).toBe("残り約5時間");
+    expect(formatShareRemaining(86400)).toBe("残り約1日");
+    expect(formatShareRemaining(30 * 86400)).toBe("残り約30日");
+  });
+
   it("formats under a minute", () => {
     expect(formatShareRemaining(59)).toBe("残り約1分未満");
     expect(formatShareRemaining(1)).toBe("残り約1分未満");

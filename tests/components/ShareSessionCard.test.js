@@ -30,7 +30,7 @@ describe("share session card", () => {
   it("shows the issue button before a session is issued", () => {
     const { wrapper } = buildWrapper();
     expect(wrapper.text()).toContain("医師向け一時閲覧リンク");
-    expect(wrapper.text()).toContain("30分間有効な閲覧用URLを発行");
+    expect(wrapper.text()).toContain("1か月間有効な閲覧用URLを発行");
     expect(wrapper.find("input.share-url-input").exists()).toBe(false);
   });
 
@@ -72,7 +72,7 @@ describe("share session card", () => {
     await flushPromises();
     expect(store.issuedShare).toBeNull();
     expect(wrapper.find("input.share-url-input").exists()).toBe(false);
-    expect(wrapper.text()).toContain("30分間有効な閲覧用URLを発行");
+    expect(wrapper.text()).toContain("1か月間有効な閲覧用URLを発行");
   });
 
   it("shows an error when issuing fails", async () => {
