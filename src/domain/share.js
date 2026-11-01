@@ -33,7 +33,7 @@ export function shareSecondsLeft(expiresAt, nowMs) {
   return Math.max(0, Math.ceil((expiresMs - nowMs) / 1000));
 }
 
-/** Human label such as "残り約30分" / "残り約1分未満" / "期限切れ". */
+/** Human label such as "残り約30日" / "残り約30分" / "残り約1分未満" / "期限切れ". */
 export function formatShareRemaining(seconds) {
   if (seconds === null) {
     return "";
@@ -44,5 +44,11 @@ export function formatShareRemaining(seconds) {
   if (seconds < 60) {
     return "残り約1分未満";
   }
-  return `残り約${Math.ceil(seconds / 60)}分`;
+  if (seconds < 3600) {
+    return `残り約${Math.ceil(seconds / 60)}分`;
+  }
+  if (seconds < 86400) {
+    return `残り約${Math.ceil(seconds / 3600)}時間`;
+  }
+  return `残り約${Math.ceil(seconds / 86400)}日`;
 }

@@ -105,7 +105,7 @@ onUnmounted(() => {
   <section class="chart-card" style="margin-top: 16px" :aria-busy="busy">
     <h2 class="section-title">医師向け一時閲覧リンク</h2>
     <p class="meta">
-      ログイン不要で30分間だけデータを閲覧できるURLを発行します。新しいURLを発行すると、前のURLは無効になります。この画面を閉じると発行したURLは再表示できません。
+      ログイン不要で1か月間データを閲覧できるURLを発行します。新しいURLを発行すると、前のURLは無効になります。この画面を閉じると発行したURLは再表示できません。
     </p>
     <p v-if="busy" class="meta busy-note" role="status">
       <span class="spinner" aria-hidden="true" />サーバーと通信しています…
@@ -145,7 +145,7 @@ onUnmounted(() => {
     </template>
     <p v-else>
       <button class="theme-toggle" type="button" :disabled="busy" @click="issue">
-        <span v-if="busyAction === 'issue'" class="spinner" aria-hidden="true" />{{ busyAction === "issue" ? "発行中…" : "30分間有効な閲覧用URLを発行" }}
+        <span v-if="busyAction === 'issue'" class="spinner" aria-hidden="true" />{{ busyAction === "issue" ? "発行中…" : "1か月間有効な閲覧用URLを発行" }}
       </button>
     </p>
   </section>
