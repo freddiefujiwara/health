@@ -3,7 +3,11 @@ import { normalizeHealth } from "@/domain/normalize";
 import { parseShareToken } from "@/domain/share";
 import sampleApi from "@/mocks/sampleApi.json";
 
+// The API endpoint can be overridden at build time (staging builds set
+// VITE_GAS_ENDPOINT to the staging deployment). Production builds leave
+// it unset and use the production endpoint below.
 export const HEALTH_API_URL =
+  import.meta.env.VITE_GAS_ENDPOINT ??
   "https://script.google.com/macros/s/AKfycbxGka-swbhzKbZsVUVzCbIpFHkkBf1Wr8DDsyBsHJtWhZv0LLWjlMqOSQbHHP2Cc3-O/exec";
 const ID_TOKEN_STORAGE_KEY = "health-google-id-token";
 const SHARE_TOKEN_STORAGE_KEY = "health-share-token";
