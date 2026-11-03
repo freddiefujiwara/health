@@ -8,6 +8,11 @@ import Nutrition from "./views/Nutrition.vue";
 import Steps from "./views/Steps.vue";
 import Labs from "./views/Labs.vue";
 import "./style.css";
+import { isStagingBuild, showStagingBanner } from "./staging-banner.js";
+
+if (isStagingBuild(import.meta.env)) {
+  showStagingBanner(document);
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
