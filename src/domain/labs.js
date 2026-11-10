@@ -44,6 +44,7 @@ export const FEATURED_LAB_ITEMS = [
   "AST",
   "クレアチニン",
   "eGFR",
+  "尿酸",
   "C反応性蛋白",
   "中性脂肪",
   "グルコース",
