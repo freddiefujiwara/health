@@ -34,60 +34,84 @@ describe("health store", () => {
     expect(store.data.goals.finalGoalKg).toBe(80);
   });
 
-  it("sends the stored ID token as a query parameter", async () => {
-    localStorage.setItem("health-google-id-token", "stored-token");
+  it("sends the stored session token as a query parameter", async () => {
+    localStorage.setItem("health-session-token", "stored-session");
     const fetchMock = vi.fn(async () => okResponse(payload));
     vi.stubGlobal("fetch", fetchMock);
     const store = useHealthStore();
     await store.fetchHealth();
-    expect(fetchMock).toHaveBeenCalledWith(`${HEALTH_API_URL}?id_token=stored-token`);
+    expect(fetchMock).toHaveBeenCalledWith(`${HEALTH_API_URL}?session_token=stored-session`);
     expect(store.source).toBe("live");
+    expect(store.hasSession).toBe(true);
   });
 
-  it("prefers a direct token over the stored one", async () => {
-    localStorage.setItem("health-google-id-token", "stored-token");
-    const fetchMock = vi.fn(async () => okResponse(payload));
+  it("exchanges a Google ID token for a stored owner session", async () => {
+    const fetchMock = vi.fn(async () => okResponse({
+      session_token: "new-session",
+      expires_at: "2026-12-31T05:00:00.000Z",
+      ttl_seconds: 2592000,
+    }));
     vi.stubGlobal("fetch", fetchMock);
     const store = useHealthStore();
-    await store.fetchHealth("direct-token");
-    expect(fetchMock).toHaveBeenCalledWith(`${HEALTH_API_URL}?id_token=direct-token`);
+    const token = await store.exchangeSession("google-id-token");
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${HEALTH_API_URL}?action=exchange_session&id_token=google-id-token`,
+    );
+    expect(token).toBe("new-session");
+    expect(localStorage.getItem("health-session-token")).toBe("new-session");
+    expect(store.hasSession).toBe(true);
+  });
+
+  it("does not store a session when the exchange is rejected", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okResponse({ status: 403, error: "forbidden email" })));
+    const store = useHealthStore();
+    const token = await store.exchangeSession("google-id-token");
+    expect(token).toBe("");
+    expect(localStorage.getItem("health-session-token")).toBeNull();
+    expect(store.error).toBe("AUTH 403: forbidden email");
   });
 
   it("reports an AUTH error without falling back when the token is missing", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => okResponse({ status: 401, error: "missing id token" })));
     const store = useHealthStore();
     await store.fetchHealth();
-    expect(store.error).toBe("AUTH 401: missing id token (GAS must read e.parameter.id_token)");
+    expect(store.error).toBe("AUTH 401: missing id token");
     expect(store.data).toBeNull();
     expect(store.source).toBe("");
     expect(store.rawResponse).toBeNull();
   });
 
-  it("retries once when the API reports a missing ID token despite having one", async () => {
-    const fetchMock = vi.fn()
-      .mockImplementationOnce(async () => okResponse({ status: 401, error: "missing id token" }))
-      .mockImplementationOnce(async () => okResponse(payload));
-    vi.stubGlobal("fetch", fetchMock);
+  it("clears the stored session when the API reports it expired or invalid", async () => {
+    localStorage.setItem("health-session-token", "stale-session");
+    vi.stubGlobal("fetch", vi.fn(async () => okResponse({
+      status: 401,
+      error: "session expired or invalid",
+    })));
     const store = useHealthStore();
-    await store.fetchHealth("some-token");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(store.source).toBe("live");
+    await store.fetchHealth();
+    expect(store.error).toBe("AUTH 401: session expired or invalid");
+    expect(localStorage.getItem("health-session-token")).toBeNull();
+    expect(store.hasSession).toBe(false);
+    expect(store.data).toBeNull();
   });
 
-  it("gives up after one retry when the ID token keeps being reported missing", async () => {
-    const fetchMock = vi.fn(async () => okResponse({ status: 401, error: "missing id token" }));
+  it("revokes the owner session and clears the stored token", async () => {
+    localStorage.setItem("health-session-token", "live-session");
+    const fetchMock = vi.fn(async () => okResponse({ revoked: true }));
     vi.stubGlobal("fetch", fetchMock);
     const store = useHealthStore();
-    await store.fetchHealth("some-token");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(store.error).toBe("AUTH 401: missing id token (GAS must read e.parameter.id_token)");
-    expect(store.data).toBeNull();
+    await store.revokeSession();
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${HEALTH_API_URL}?action=revoke_session&session_token=live-session`,
+    );
+    expect(localStorage.getItem("health-session-token")).toBeNull();
+    expect(store.hasSession).toBe(false);
   });
 
   it("reports an AUTH error for a forbidden email", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => okResponse({ status: 403, error: "forbidden email" })));
     const store = useHealthStore();
-    await store.fetchHealth("some-token");
+    await store.fetchHealth();
     expect(store.error).toBe("AUTH 403: forbidden email");
     expect(store.data).toBeNull();
     expect(store.source).toBe("");
@@ -102,11 +126,12 @@ describe("health store", () => {
   });
 
   it("reports a CORS error without falling back when a token was sent", async () => {
+    localStorage.setItem("health-session-token", "stored-session");
     vi.stubGlobal("fetch", vi.fn(async () => {
       throw new TypeError("Failed to fetch");
     }));
     const store = useHealthStore();
-    await store.fetchHealth("some-token");
+    await store.fetchHealth();
     expect(store.error).toContain("CORS blocked API request");
     expect(store.data).toBeNull();
     expect(store.source).toBe("");
@@ -132,7 +157,7 @@ describe("health store", () => {
       json: async () => ({}),
     })));
     const store = useHealthStore();
-    await store.fetchHealth("some-token");
+    await store.fetchHealth();
     expect(store.source).toBe("mock");
     expect(store.error).toContain("HTTP 500");
   });
@@ -209,8 +234,8 @@ describe("health store", () => {
     expect(store.source).toBe("");
   });
 
-  it("issues a share session with the stored ID token", async () => {
-    localStorage.setItem("health-google-id-token", "owner-token");
+  it("issues a share session with the stored owner session", async () => {
+    localStorage.setItem("health-session-token", "owner-token");
     const fetchMock = vi.fn(async () => okResponse({
       share_token: "new-share-token",
       expires_at: "2026-10-31T05:00:00.000Z",
@@ -220,13 +245,13 @@ describe("health store", () => {
     const store = useHealthStore();
     const issued = await store.issueShare();
     expect(fetchMock).toHaveBeenCalledWith(
-      `${HEALTH_API_URL}?action=issue_share&id_token=owner-token`,
+      `${HEALTH_API_URL}?action=issue_share&session_token=owner-token`,
     );
     expect(issued).toEqual({ token: "new-share-token", expiresAt: "2026-10-31T05:00:00.000Z" });
     expect(store.issuedShare).toEqual(issued);
   });
 
-  it("issues a share session without a stored ID token", async () => {
+  it("issues a share session without a stored owner session", async () => {
     const fetchMock = vi.fn(async () => okResponse({
       share_token: "tok",
       expires_at: "2026-10-31T05:00:00.000Z",
@@ -261,14 +286,14 @@ describe("health store", () => {
   });
 
   it("revokes the issued share session", async () => {
-    localStorage.setItem("health-google-id-token", "owner-token");
+    localStorage.setItem("health-session-token", "owner-token");
     const fetchMock = vi.fn(async () => okResponse({ revoked: true }));
     vi.stubGlobal("fetch", fetchMock);
     const store = useHealthStore();
     store.issuedShare = { token: "tok", expiresAt: "2026-10-31T05:00:00.000Z" };
     await store.revokeShare();
     expect(fetchMock).toHaveBeenCalledWith(
-      `${HEALTH_API_URL}?action=revoke_share&id_token=owner-token`,
+      `${HEALTH_API_URL}?action=revoke_share&session_token=owner-token`,
     );
     expect(store.issuedShare).toBeNull();
   });

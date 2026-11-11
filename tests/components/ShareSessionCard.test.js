@@ -24,7 +24,7 @@ describe("share session card", () => {
     vi.restoreAllMocks();
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem("health-google-id-token", "owner-token");
+    localStorage.setItem("health-session-token", "owner-token");
   });
 
   it("shows the issue button before a session is issued", () => {
