@@ -67,8 +67,8 @@ describe("app shell", () => {
     expect(wrapper.text()).toContain("健康可視化");
   });
 
-  it("shows a logout button when an ID token is saved", async () => {
-    localStorage.setItem("health-google-id-token", "saved-token");
+  it("shows a logout button when a session token is saved", async () => {
+    localStorage.setItem("health-session-token", "saved-token");
     const { wrapper, router } = buildWrapper((store) => {
       store.data = normalizeHealth(sampleApi);
       store.source = "live";

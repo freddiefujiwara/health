@@ -147,6 +147,6 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
       </table>
     </section>
 
-    <ShareSessionCard v-if="store.hasIdToken && !store.shareMode" />
+    <ShareSessionCard v-if="store.hasSession && !store.shareMode" />
   </div>
 </template>
