@@ -14,6 +14,8 @@ const props = defineProps({
   signed: { type: Boolean, default: false },
   hideAxisInPrivate: { type: Boolean, default: false },
   labelType: { type: String, default: "date" },
+  // [{ from: number, to: number }] in category-index units (e.g. hours 0..24); drawn behind the bars
+  bands: { type: Array, default: () => [] },
   height: { type: Number, default: 220 },
 });
 
@@ -137,6 +139,22 @@ function render() {
       .text(props.guidelineLabel || `${props.guidelineValue}${props.unit}`);
   }
 
+  if (props.bands.length) {
+    const slotStart = x(data[0].date) - (x.step() - x.bandwidth()) / 2;
+    const plotRight = w - margin.right;
+    svg
+      .selectAll("rect.band")
+      .data(props.bands)
+      .join("rect")
+      .attr("class", "band")
+      .attr("x", (b) => slotStart + b.from * x.step())
+      .attr("width", (b) => Math.min((b.to - b.from) * x.step(), plotRight - (slotStart + b.from * x.step())))
+      .attr("y", margin.top)
+      .attr("height", h - margin.bottom - margin.top)
+      .attr("fill", "#8b5cf6")
+      .attr("opacity", 0.22);
+  }
+
   const barTop = (d) => (props.signed ? Math.min(y(d.value), y(0)) : y(d.value));
   svg
     .selectAll("rect.bar")
@@ -185,7 +203,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => [props.points, props.guidelineValue],
+  () => [props.points, props.guidelineValue, props.bands],
   () => render(),
   { deep: true },
 );

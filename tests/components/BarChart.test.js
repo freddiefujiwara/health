@@ -67,3 +67,22 @@ describe("bar chart tooltip", () => {
     expect(wrapper.text()).toContain("23時");
   });
 });
+
+describe("bar chart bands", () => {
+  const hourPoints = Array.from({ length: 24 }, (_, h) => ({ date: `${h}時`, value: h === 5 ? 28 : 3 }));
+
+  it("renders background bands behind the bars", () => {
+    const wrapper = mount(BarChart, {
+      props: { points: hourPoints, unit: "回", labelType: "plain", bands: [{ from: 0, to: 4.25 }, { from: 20.5, to: 24 }] },
+    });
+    const bands = wrapper.findAll("rect.band");
+    expect(bands).toHaveLength(2);
+    expect(Number(bands[0].attributes("width"))).toBeGreaterThan(0);
+    expect(Number(bands[1].attributes("x"))).toBeGreaterThan(Number(bands[0].attributes("x")));
+  });
+
+  it("renders no bands by default", () => {
+    const wrapper = mount(BarChart, { props: { points: hourPoints, unit: "回", labelType: "plain" } });
+    expect(wrapper.findAll("rect.band")).toHaveLength(0);
+  });
+});
