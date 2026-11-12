@@ -108,6 +108,50 @@ describe("health store", () => {
     expect(store.hasSession).toBe(false);
   });
 
+  it("throws when the session exchange returns an HTTP error", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) })));
+    const store = useHealthStore();
+    await expect(store.exchangeSession("google-id-token")).rejects.toThrow("HTTP 500");
+    expect(localStorage.getItem("health-session-token")).toBeNull();
+    expect(store.hasSession).toBe(false);
+  });
+
+  it("returns an empty token when the exchange response has no session token", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okResponse({ expires_at: "2026-12-31T05:00:00.000Z" })));
+    const store = useHealthStore();
+    const token = await store.exchangeSession("google-id-token");
+    expect(token).toBe("");
+    expect(localStorage.getItem("health-session-token")).toBeNull();
+    expect(store.hasSession).toBe(false);
+  });
+
+  it("uses a generic message when the exchange rejection has no error detail", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okResponse({ status: 401 })));
+    const store = useHealthStore();
+    const token = await store.exchangeSession("google-id-token");
+    expect(token).toBe("");
+    expect(store.error).toBe("AUTH 401: unauthorized");
+    expect(localStorage.getItem("health-session-token")).toBeNull();
+  });
+
+  it("revokeSession does not call the API when no session is stored", async () => {
+    const fetchMock = vi.fn(async () => okResponse({ revoked: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.revokeSession();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.hasSession).toBe(false);
+  });
+
+  it("revokeSession still clears the local session when the API call fails", async () => {
+    localStorage.setItem("health-session-token", "live-session");
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("network down"); }));
+    const store = useHealthStore();
+    await expect(store.revokeSession()).resolves.toBeUndefined();
+    expect(localStorage.getItem("health-session-token")).toBeNull();
+    expect(store.hasSession).toBe(false);
+  });
+
   it("reports an AUTH error for a forbidden email", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => okResponse({ status: 403, error: "forbidden email" })));
     const store = useHealthStore();
