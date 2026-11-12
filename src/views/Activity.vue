@@ -62,7 +62,9 @@ const hourMetaText = computed(() => {
   }
   const total = activeHourRows.value.reduce((sum, r) => sum + (r.userMessageCount ?? 0), 0);
   const label = activeHourKey.value.replaceAll("-", "/");
-  const bandNote = hourBands.value.length ? "紫の帯は推定睡眠として数えた区間です。" : "";
+  const bandNote = sleepBands.value.length
+    ? `紫の帯は推定睡眠として数えた区間です（${sleepBands.value.map((b) => b.note).join("／")}）。`
+    : "";
   return `多い時間帯：${peakHoursText.value}。${label} の合計は ${formatInteger(total)} 回です。${bandNote}`;
 });
 
@@ -88,12 +90,12 @@ function dayDiff(from, to) {
 // Sleep bands (in fractional hours) overlapping the selected calendar day.
 // A sleep row belongs to its wake date; its start is on the previous evening
 // when the start time is 20:00 or later, otherwise on the wake date itself.
-const hourBands = computed(() => {
+const sleepBands = computed(() => {
   if (activeHourKey.value === "total") {
     return [];
   }
   const day = activeHourKey.value;
-  const bands = [];
+  const result = [];
   for (const row of sleep.value) {
     const startH = timeToHours(row.sleepStartEst);
     const endH = timeToHours(row.sleepEndEst);
@@ -106,15 +108,17 @@ const hourBands = computed(() => {
     const from = Math.max(0, start);
     const to = Math.min(24, end);
     if (from < to) {
-      bands.push({
+      result.push({
         from,
         to,
-        label: `推定睡眠 ${row.sleepStartEst}–${row.sleepEndEst}（${formatDurationMinutes(row.durationMinutesEst)}）`,
+        label: formatDurationMinutes(row.durationMinutesEst),
+        note: `${row.sleepStartEst}–${row.sleepEndEst}、${formatDurationMinutes(row.durationMinutesEst)}`,
       });
     }
   }
-  return bands;
+  return result;
 });
+const hourBands = computed(() => sleepBands.value);
 
 const cards = computed(() => [
   { label: "直近7日 平均使用時間", value: formatDurationMinutes(average(last7.value.map((r) => r.engagedMinutesEst))) },

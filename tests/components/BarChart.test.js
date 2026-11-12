@@ -87,12 +87,12 @@ describe("bar chart bands", () => {
         points: hourPoints,
         unit: "回",
         labelType: "plain",
-        bands: [{ from: 0, to: 4.25, label: "推定睡眠 22:29–4:14（5時間45分）" }],
+        bands: [{ from: 0, to: 4.25, label: "5時間45分" }],
       },
     });
     const labels = wrapper.findAll("text.band-label");
     expect(labels).toHaveLength(1);
-    expect(labels[0].text()).toBe("推定睡眠 22:29–4:14（5時間45分）");
+    expect(labels[0].text()).toBe("5時間45分");
   });
 
   it("renders no bands by default", () => {
