@@ -127,14 +127,14 @@ describe("activity view tabs and line chart", () => {
   });
 });
 
-describe("activity view sleep section", () => {
+describe("activity view sleep card", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
     sessionStorage.clear();
   });
 
-  it("renders the sleep estimate chart with the 7-day average", async () => {
+  it("shows the average sleep estimate as a card, without a chart section", async () => {
     const pinia = createPinia();
     const store = useHealthStore(pinia);
     store.data = normalizeHealth({
@@ -147,7 +147,25 @@ describe("activity view sleep section", () => {
     store.source = "live";
     const wrapper = mount(Activity, { global: { plugins: [pinia] } });
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("推定睡眠時間（直近30日）");
-    expect(wrapper.text()).toContain("直近7日の平均は 4時間16分 です");
+    expect(wrapper.text()).toContain("直近7日 平均推定睡眠");
+    expect(wrapper.text()).toContain("4時間16分");
+    expect(wrapper.text()).not.toContain("推定睡眠時間（直近30日）");
+  });
+
+  it("places the hourly chart above the daily usage chart", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_hours: [
+        { hour: 5, user_message_count: 426, engaged_minutes_est: 742 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    const text = wrapper.text();
+    expect(text.indexOf("時間帯別の活動量")).toBeGreaterThanOrEqual(0);
+    expect(text.indexOf("時間帯別の活動量")).toBeLessThan(text.indexOf("スマホ使用時間（直近30日）"));
   });
 });
