@@ -51,6 +51,7 @@ watch(
           <RouterLink to="/nutrition">食事</RouterLink>
           <RouterLink to="/steps">歩数</RouterLink>
           <RouterLink to="/labs">検査結果</RouterLink>
+          <RouterLink to="/activity">活動時間</RouterLink>
         </nav>
         <div class="header-buttons">
           <button v-if="!healthStore.shareMode" class="theme-toggle" type="button" @click="uiStore.togglePrivacy">

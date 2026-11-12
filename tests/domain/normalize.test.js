@@ -9,6 +9,7 @@ describe("normalizeHealth", () => {
     expect(empty.steps).toEqual([]);
     expect(empty.segments).toEqual([]);
     expect(empty.periodSummaries).toEqual([]);
+    expect(empty.chatActivity).toEqual([]);
     expect(empty.medicationPlan).toEqual([]);
     expect(empty.medicationLog).toEqual([]);
     expect(empty.goals.startWeightKg).toBeNull();
@@ -152,5 +153,28 @@ describe("normalizeHealth lab results", () => {
 
   it("defaults labResults to an empty array", () => {
     expect(normalizeHealth({}).labResults).toEqual([]);
+  });
+
+  it("normalizes chat activity, padding times and sorting by date", () => {
+    const result = normalizeHealth({
+      chat_activity: [
+        { date: "2026-11-12", user_message_count: 227, engaged_minutes_est: 870, session_count: 7, first_message_at: "4:14", last_message_at: "23:11", late_night_message_count: 3, notes: "利用開始日" },
+        { date: "2026-11-11", user_message_count: "280", engaged_minutes_est: "abc", session_count: 6, first_message_at: "01:37", last_message_at: "", late_night_message_count: 35 },
+        { date: "2026-11-10", user_message_count: 5 },
+        { user_message_count: 10 },
+        null,
+      ],
+    });
+    expect(result.chatActivity).toHaveLength(3);
+    expect(result.chatActivity[0].date).toBe("2026-11-10");
+    expect(result.chatActivity[0].firstMessageAt).toBe("");
+    expect(result.chatActivity[0].engagedMinutesEst).toBeNull();
+    expect(result.chatActivity[1].userMessageCount).toBe(280);
+    expect(result.chatActivity[1].engagedMinutesEst).toBeNull();
+    expect(result.chatActivity[1].firstMessageAt).toBe("01:37");
+    expect(result.chatActivity[1].lastMessageAt).toBe("");
+    expect(result.chatActivity[1].notes).toBe("");
+    expect(result.chatActivity[2].firstMessageAt).toBe("04:14");
+    expect(result.chatActivity[2].notes).toBe("利用開始日");
   });
 });
