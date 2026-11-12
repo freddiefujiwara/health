@@ -125,7 +125,35 @@ describe("activity view tabs and line chart", () => {
     expect(lineChart.exists()).toBe(true);
     expect(lineChart.findAll('path[fill="none"]').length).toBeGreaterThanOrEqual(1);
   });
+  it("shows the sleep band on a day view but not on the total view", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    const dailyHours = [];
+    for (let h = 0; h < 24; h += 1) {
+      dailyHours.push({ date: "2026-11-12", hour: h, user_message_count: h === 5 ? 28 : 0, engaged_minutes_est: 0 });
+    }
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_hours: [
+        { hour: 5, user_message_count: 426, engaged_minutes_est: 742 },
+      ],
+      chat_activity_daily_hours: dailyHours,
+      sleep_estimates: [
+        { date: "2026-11-12", sleep_start_est: "22:29", sleep_end_est: "04:14", duration_minutes_est: 345 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
+    expect(wrapper.findAll("rect.band")).toHaveLength(0);
+    await wrapper.find('button[aria-label="前の日"]').trigger("click");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12");
+    expect(wrapper.findAll("rect.band")).toHaveLength(1);
+    expect(wrapper.text()).toContain("紫の帯は推定睡眠として数えた区間です");
+  });
 });
+
 
 describe("activity view sleep card", () => {
   beforeEach(() => {
