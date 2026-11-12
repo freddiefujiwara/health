@@ -32,7 +32,7 @@ describe("activity view", () => {
     await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain("記録日数");
     expect(wrapper.text()).toContain("2 日");
-    expect(wrapper.text()).toContain("推定会話時間（直近30日）");
+    expect(wrapper.text()).toContain("スマホ使用時間（直近30日）");
     const rows = wrapper.findAll("tbody tr");
     expect(rows).toHaveLength(2);
     expect(rows[0].text()).toContain("2026-11-12");
@@ -64,8 +64,55 @@ describe("activity view hourly section", () => {
     store.source = "live";
     const wrapper = mount(Activity, { global: { plugins: [pinia] } });
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("時間帯別のメッセージ数（全期間）");
+    expect(wrapper.text()).toContain("時間帯別のメッセージ数");
     expect(wrapper.text()).toContain("5時台（426件）");
     expect(wrapper.text()).toContain("18時台（384件）");
+  });
+});
+
+describe("activity view tabs and line chart", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  function mountWithDailyHours() {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_hours: [
+        { hour: 5, user_message_count: 426, engaged_minutes_est: 742 },
+        { hour: 18, user_message_count: 384, engaged_minutes_est: 961 },
+      ],
+      chat_activity_daily_hours: [
+        { date: "2026-11-12", hour: 5, user_message_count: 28, engaged_minutes_est: 59 },
+        { date: "2026-11-12", hour: 17, user_message_count: 24, engaged_minutes_est: 63 },
+        { date: "2026-11-11", hour: 21, user_message_count: 26, engaged_minutes_est: 56 },
+      ],
+    });
+    store.source = "live";
+    return mount(Activity, { global: { plugins: [pinia] } });
+  }
+
+  it("shows total tab by default and switches to a day tab", async () => {
+    const wrapper = mountWithDailyHours();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("時間帯別のメッセージ数");
+    expect(wrapper.text()).toContain("多い時間帯：5時台（426件）");
+    const tabs = wrapper.findAll(".hour-tab");
+    expect(tabs.map((t) => t.text())).toEqual(["合計", "2026/11/12", "2026/11/11"]);
+    await tabs[1].trigger("click");
+    expect(wrapper.text()).toContain("多い時間帯：5時台（28件）、17時台（24件）");
+    expect(wrapper.text()).toContain("2026/11/12 の合計は 52 件です");
+  });
+
+  it("renders the daily minutes chart as a line chart", async () => {
+    const wrapper = mountWithDailyHours();
+    await wrapper.vm.$nextTick();
+    const lineChart = wrapper.find(".line-chart");
+    expect(lineChart.exists()).toBe(true);
+    expect(lineChart.findAll('path[fill="none"]').length).toBeGreaterThanOrEqual(1);
   });
 });
