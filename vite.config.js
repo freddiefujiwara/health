@@ -5,6 +5,15 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig({
   base: "/health/",
   plugins: [vue()],
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep d3 out of the entry chunk: it is only needed by the
+        // lazily loaded chart views.
+        manualChunks: { d3: ["d3"] },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
