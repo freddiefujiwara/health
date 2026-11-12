@@ -5,6 +5,7 @@ import {
   formatKg,
   formatPercentChange,
   formatChartValue,
+  formatDurationMinutes,
 
 } from "../../src/domain/format";
 
@@ -44,5 +45,15 @@ describe("format helpers", () => {
     expect(formatPercentChange(null, 100)).toBe("-");
     expect(formatPercentChange(90, null)).toBe("-");
     expect(formatPercentChange(90, 0)).toBe("-");
+  });
+
+  it("formats durations in minutes", () => {
+    expect(formatDurationMinutes(null)).toBe("-");
+    expect(formatDurationMinutes(undefined)).toBe("-");
+    expect(formatDurationMinutes(0)).toBe("0分");
+    expect(formatDurationMinutes(45)).toBe("45分");
+    expect(formatDurationMinutes(60)).toBe("1時間");
+    expect(formatDurationMinutes(920)).toBe("15時間20分");
+    expect(formatDurationMinutes(89.6)).toBe("1時間30分");
   });
 });

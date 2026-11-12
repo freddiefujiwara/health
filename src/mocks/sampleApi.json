@@ -2439,5 +2439,40 @@
    "source": "検査結果報告書（皮膚科）",
    "notes": ""
   }
+ ],
+ "chat_activity": [
+  {
+   "date": "2026-08-23",
+   "user_message_count": 120,
+   "engaged_minutes_est": 540,
+   "session_count": 6,
+   "first_message_at": "04:32",
+   "last_message_at": "21:15",
+   "late_night_message_count": 0,
+   "source": "Muse 会話記録",
+   "notes": ""
+  },
+  {
+   "date": "2026-08-24",
+   "user_message_count": 210,
+   "engaged_minutes_est": 765,
+   "session_count": 8,
+   "first_message_at": "01:12",
+   "last_message_at": "22:03",
+   "late_night_message_count": 18,
+   "source": "Muse 会話記録",
+   "notes": ""
+  },
+  {
+   "date": "2026-08-25",
+   "user_message_count": 96,
+   "engaged_minutes_est": 402,
+   "session_count": 5,
+   "first_message_at": "04:05",
+   "last_message_at": "20:47",
+   "late_night_message_count": 0,
+   "source": "Muse 会話記録",
+   "notes": ""
+  }
  ]
 }

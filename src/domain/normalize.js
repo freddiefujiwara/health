@@ -114,6 +114,31 @@ function normalizeLabResults(rows) {
     .sort(byDateAsc);
 }
 
+/** "4:14" / "13:04" -> "04:14" / "13:04"; anything else -> "". */
+function normalizeTimeText(value) {
+  const match = String(value ?? "").trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) {
+    return "";
+  }
+  return `${match[1].padStart(2, "0")}:${match[2]}`;
+}
+
+function normalizeChatActivity(rows) {
+  return rows
+    .filter((row) => row && row.date)
+    .map((row) => ({
+      date: String(row.date).slice(0, 10),
+      userMessageCount: toNumber(row.user_message_count),
+      engagedMinutesEst: toNumber(row.engaged_minutes_est),
+      sessionCount: toNumber(row.session_count),
+      firstMessageAt: normalizeTimeText(row.first_message_at),
+      lastMessageAt: normalizeTimeText(row.last_message_at),
+      lateNightMessageCount: toNumber(row.late_night_message_count),
+      notes: row.notes ?? "",
+    }))
+    .sort(byDateAsc);
+}
+
 function normalizeGoals(rows) {
   const goals = {
     startWeightKg: null,
@@ -170,6 +195,7 @@ export function normalizeHealth(payload) {
     segments: normalizeSegments(source.body_segments ?? []),
     periodSummaries: normalizePeriodSummaries(source.period_summaries ?? []),
     labResults: normalizeLabResults(source.lab_results ?? []),
+    chatActivity: normalizeChatActivity(source.chat_activity ?? []),
     medicationPlan: source.medication_plan ?? [],
     medicationLog: source.medication_log ?? [],
     goals: normalizeGoals(source.goals_settings ?? []),

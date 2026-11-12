@@ -7,6 +7,7 @@ import BodyComposition from "./views/BodyComposition.vue";
 import Nutrition from "./views/Nutrition.vue";
 import Steps from "./views/Steps.vue";
 import Labs from "./views/Labs.vue";
+import Activity from "./views/Activity.vue";
 import "./style.css";
 import { isStagingBuild, showStagingBanner } from "./staging-banner.js";
 
@@ -23,6 +24,7 @@ const router = createRouter({
     { path: "/nutrition", component: Nutrition },
     { path: "/steps", component: Steps },
     { path: "/labs", component: Labs },
+    { path: "/activity", component: Activity },
   ],
 });
 

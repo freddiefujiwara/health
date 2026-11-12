@@ -30,6 +30,23 @@ export function formatPercentChange(current, baseline) {
   return `${sign}${pct.toFixed(1)}%`;
 }
 
+/** Minutes -> "15時間20分" / "1時間" / "45分" / "0分". */
+export function formatDurationMinutes(value) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  const total = Math.round(value);
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  if (hours === 0) {
+    return `${minutes}分`;
+  }
+  if (minutes === 0) {
+    return `${hours}時間`;
+  }
+  return `${hours}時間${minutes}分`;
+}
+
 /** Tooltip value: integers grouped, decimals up to 2 places. */
 export function formatChartValue(value) {
   if (typeof value !== "number" || !Number.isFinite(value)) {
