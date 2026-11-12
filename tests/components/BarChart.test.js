@@ -48,4 +48,22 @@ describe("bar chart tooltip", () => {
     await wrapper.find("svg").trigger("pointerleave");
     expect(wrapper.find(".chart-tooltip").exists()).toBe(false);
   });
+
+  it("renders plain labels as-is when labelType is plain", () => {
+    const wrapper = mount(BarChart, {
+      props: {
+        points: [
+          { date: "0時", value: 10 },
+          { date: "5時", value: 42 },
+          { date: "13時", value: 30 },
+          { date: "23時", value: 5 },
+        ],
+        labelType: "plain",
+        unit: "件",
+      },
+    });
+    expect(wrapper.findAll("rect.bar")).toHaveLength(4);
+    expect(wrapper.text()).toContain("0時");
+    expect(wrapper.text()).toContain("23時");
+  });
 });

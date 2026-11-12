@@ -10,6 +10,7 @@ describe("normalizeHealth", () => {
     expect(empty.segments).toEqual([]);
     expect(empty.periodSummaries).toEqual([]);
     expect(empty.chatActivity).toEqual([]);
+    expect(empty.chatActivityHours).toEqual([]);
     expect(empty.medicationPlan).toEqual([]);
     expect(empty.medicationLog).toEqual([]);
     expect(empty.goals.startWeightKg).toBeNull();
@@ -176,5 +177,22 @@ describe("normalizeHealth lab results", () => {
     expect(result.chatActivity[1].notes).toBe("");
     expect(result.chatActivity[2].firstMessageAt).toBe("04:14");
     expect(result.chatActivity[2].notes).toBe("利用開始日");
+  });
+
+  it("normalizes chat activity hours sorted by hour", () => {
+    const result = normalizeHealth({
+      chat_activity_hours: [
+        { hour: 13, user_message_count: 256, engaged_minutes_est: 884 },
+        { hour: "5", user_message_count: "426", engaged_minutes_est: "742" },
+        { hour: 0, user_message_count: 28 },
+        { user_message_count: 10 },
+        { hour: "", user_message_count: 10 },
+        { hour: null, user_message_count: 10 },
+        null,
+      ],
+    });
+    expect(result.chatActivityHours.map((r) => r.hour)).toEqual([0, 5, 13]);
+    expect(result.chatActivityHours[1].userMessageCount).toBe(426);
+    expect(result.chatActivityHours[0].engagedMinutesEst).toBeNull();
   });
 });

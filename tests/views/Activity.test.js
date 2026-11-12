@@ -42,3 +42,30 @@ describe("activity view", () => {
     expect(rows[1].text()).toContain("18時間15分");
   });
 });
+
+describe("activity view hourly section", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it("renders the hourly chart section with peak hours", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_hours: [
+        { hour: 5, user_message_count: 426, engaged_minutes_est: 742 },
+        { hour: 18, user_message_count: 384, engaged_minutes_est: 961 },
+        { hour: 1, user_message_count: 90, engaged_minutes_est: 378 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("時間帯別のメッセージ数（全期間）");
+    expect(wrapper.text()).toContain("5時台（426件）");
+    expect(wrapper.text()).toContain("18時台（384件）");
+  });
+});
