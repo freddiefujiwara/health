@@ -106,7 +106,11 @@ const hourBands = computed(() => {
     const from = Math.max(0, start);
     const to = Math.min(24, end);
     if (from < to) {
-      bands.push({ from, to });
+      bands.push({
+        from,
+        to,
+        label: `推定睡眠 ${row.sleepStartEst}–${row.sleepEndEst}（${formatDurationMinutes(row.durationMinutesEst)}）`,
+      });
     }
   }
   return bands;

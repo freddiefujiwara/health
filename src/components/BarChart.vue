@@ -14,7 +14,7 @@ const props = defineProps({
   signed: { type: Boolean, default: false },
   hideAxisInPrivate: { type: Boolean, default: false },
   labelType: { type: String, default: "date" },
-  // [{ from: number, to: number }] in category-index units (e.g. hours 0..24); drawn behind the bars
+  // [{ from: number, to: number, label?: string }] in category-index units (e.g. hours 0..24); drawn behind the bars
   bands: { type: Array, default: () => [] },
   height: { type: Number, default: 220 },
 });
@@ -139,20 +139,26 @@ function render() {
       .text(props.guidelineLabel || `${props.guidelineValue}${props.unit}`);
   }
 
+  let bandLayout = [];
   if (props.bands.length) {
     const slotStart = x(data[0].date) - (x.step() - x.bandwidth()) / 2;
     const plotRight = w - margin.right;
+    bandLayout = props.bands.map((b) => {
+      const bx = slotStart + b.from * x.step();
+      const bw = Math.min((b.to - b.from) * x.step(), plotRight - bx);
+      return { ...b, x: bx, width: bw };
+    });
     svg
       .selectAll("rect.band")
-      .data(props.bands)
+      .data(bandLayout)
       .join("rect")
       .attr("class", "band")
-      .attr("x", (b) => slotStart + b.from * x.step())
-      .attr("width", (b) => Math.min((b.to - b.from) * x.step(), plotRight - (slotStart + b.from * x.step())))
+      .attr("x", (b) => b.x)
+      .attr("width", (b) => b.width)
       .attr("y", margin.top)
       .attr("height", h - margin.bottom - margin.top)
       .attr("fill", "#8b5cf6")
-      .attr("opacity", 0.22);
+      .attr("opacity", 0.45);
   }
 
   const barTop = (d) => (props.signed ? Math.min(y(d.value), y(0)) : y(d.value));
@@ -181,6 +187,30 @@ function render() {
     .on("pointerenter pointerdown", (event, d) => {
       showTooltip(d, x(d.date) + x.bandwidth() / 2, barTop(d));
     });
+
+  if (bandLayout.length) {
+    const plotLeft = margin.left;
+    const plotRight = w - margin.right;
+    const estimateWidth = (text) =>
+      [...text].reduce((sum, ch) => sum + (ch.charCodeAt(0) > 255 ? 11 : 6.2), 0);
+    svg
+      .selectAll("text.band-label")
+      .data(bandLayout.filter((b) => b.label))
+      .join("text")
+      .attr("class", "band-label")
+      .attr("x", (b) => {
+        const half = estimateWidth(b.label) / 2;
+        const center = b.x + b.width / 2;
+        return Math.min(Math.max(center, plotLeft + half), plotRight - half);
+      })
+      .attr("y", margin.top + 14)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#ede9fe")
+      .attr("font-size", 11)
+      .attr("font-weight", 700)
+      .style("pointer-events", "none")
+      .text((b) => b.label);
+  }
 
   svg.on("pointerleave", hideTooltip);
 }

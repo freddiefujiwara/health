@@ -151,6 +151,9 @@ describe("activity view tabs and line chart", () => {
     expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12");
     expect(wrapper.findAll("rect.band")).toHaveLength(1);
     expect(wrapper.text()).toContain("紫の帯は推定睡眠として数えた区間です");
+    const bandLabels = wrapper.findAll("text.band-label");
+    expect(bandLabels).toHaveLength(1);
+    expect(bandLabels[0].text()).toBe("推定睡眠 22:29–04:14（5時間45分）");
   });
 });
 
