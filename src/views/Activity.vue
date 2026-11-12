@@ -66,9 +66,6 @@ const hourMetaText = computed(() => {
 });
 
 const sleep = computed(() => data.value?.sleepEstimates ?? []);
-const sleepPoints = computed(() =>
-  sleep.value.slice(-30).map((r) => ({ date: r.date, value: r.durationMinutesEst })),
-);
 const sleepAvg7Text = computed(() =>
   formatDurationMinutes(average(sleep.value.slice(-7).map((r) => r.durationMinutesEst))),
 );
@@ -76,6 +73,7 @@ const sleepAvg7Text = computed(() =>
 const cards = computed(() => [
   { label: "直近7日 平均使用時間", value: formatDurationMinutes(average(last7.value.map((r) => r.engagedMinutesEst))) },
   { label: "直近30日 平均使用時間", value: formatDurationMinutes(average(last30.value.map((r) => r.engagedMinutesEst))) },
+  { label: "直近7日 平均推定睡眠", value: sleepAvg7Text.value },
   { label: "直近7日 平均活動回数", value: `${formatInteger(average(last7.value.map((r) => r.userMessageCount)))} 回` },
   { label: "直近7日 深夜帯の活動", value: `${formatInteger(sum(last7.value.map((r) => r.lateNightMessageCount)))} 回` },
   { label: "記録日数", value: `${activity.value.length} 日` },
@@ -90,22 +88,9 @@ const cards = computed(() => [
         <p>{{ card.value }}</p>
       </section>
     </div>
-
-    <section class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">スマホ使用時間（直近30日）</h2>
-      <LineChart :points="points" unit="分" color="#0ea5e9" />
-      <p class="meta">
-        使用時間は利用間隔の合計による推定です（間隔は最大20分で打ち切り）。自動配信分も含むため、目安としてご覧ください。深夜帯は23:00〜翌4:29です。
-      </p>
-    </section>
-
-    <section v-if="sleep.length" class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">推定睡眠時間（直近30日）</h2>
-      <LineChart :points="sleepPoints" unit="分" color="#8b5cf6" />
-      <p class="meta">
-        直近7日の平均は {{ sleepAvg7Text }} です。20時から翌8時までの間で、活動が最も長く途切れた区間を睡眠と推定しています。実際の睡眠とは異なる場合があります。
-      </p>
-    </section>
+    <p v-if="sleep.length" class="meta" style="margin-bottom: 16px">
+      推定睡眠は、20時から翌8時までの間で活動が最も長く途切れた区間による推定です。実際の睡眠とは異なる場合があります。
+    </p>
 
     <section v-if="hours.length" class="chart-card" style="margin-bottom: 16px">
       <h2 class="section-title">時間帯別の活動量</h2>
@@ -123,6 +108,14 @@ const cards = computed(() => [
       </div>
       <BarChart :points="hourPoints" unit="回" color="#f59e0b" label-type="plain" />
       <p class="meta">{{ hourMetaText }}</p>
+    </section>
+
+    <section class="chart-card" style="margin-bottom: 16px">
+      <h2 class="section-title">スマホ使用時間（直近30日）</h2>
+      <LineChart :points="points" unit="分" color="#0ea5e9" />
+      <p class="meta">
+        使用時間は利用間隔の合計による推定です（間隔は最大20分で打ち切り）。自動配信分も含むため、目安としてご覧ください。深夜帯は23:00〜翌4:29です。
+      </p>
     </section>
 
     <section class="table-wrap">
