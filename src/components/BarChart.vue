@@ -13,6 +13,7 @@ const props = defineProps({
   guidelineLabel: { type: String, default: "" },
   signed: { type: Boolean, default: false },
   hideAxisInPrivate: { type: Boolean, default: false },
+  labelType: { type: String, default: "date" },
   height: { type: Number, default: 220 },
 });
 
@@ -26,7 +27,7 @@ function showTooltip(datum, cx, cy) {
     left: cx,
     top: cy,
     below: cy < 76,
-    dateText: datum.date.replaceAll("-", "/"),
+    dateText: props.labelType === "date" ? datum.date.replaceAll("-", "/") : datum.date,
     valueText: `${formatChartValue(datum.value)}${props.unit}`,
   };
 }
@@ -90,7 +91,12 @@ function render() {
   svg
     .append("g")
     .attr("transform", `translate(0,${h - margin.bottom})`)
-    .call(d3.axisBottom(x).tickValues(tickDates).tickFormat((d) => d.slice(5).replace("-", "/")))
+    .call(
+      d3
+        .axisBottom(x)
+        .tickValues(tickDates)
+        .tickFormat((d) => (props.labelType === "date" ? d.slice(5).replace("-", "/") : d)),
+    )
     .selectAll("text")
     .attr("fill", "#94a3b8");
   svg

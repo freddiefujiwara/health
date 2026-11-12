@@ -2474,5 +2474,151 @@
    "source": "Muse 会話記録",
    "notes": ""
   }
+ ],
+ "chat_activity_hours": [
+  {
+   "hour": 0,
+   "user_message_count": 10,
+   "engaged_minutes_est": 30,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 1,
+   "user_message_count": 30,
+   "engaged_minutes_est": 90,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 2,
+   "user_message_count": 55,
+   "engaged_minutes_est": 165,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 3,
+   "user_message_count": 40,
+   "engaged_minutes_est": 120,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 4,
+   "user_message_count": 60,
+   "engaged_minutes_est": 180,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 5,
+   "user_message_count": 150,
+   "engaged_minutes_est": 450,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 6,
+   "user_message_count": 90,
+   "engaged_minutes_est": 270,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 7,
+   "user_message_count": 110,
+   "engaged_minutes_est": 330,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 8,
+   "user_message_count": 105,
+   "engaged_minutes_est": 315,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 9,
+   "user_message_count": 80,
+   "engaged_minutes_est": 240,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 10,
+   "user_message_count": 45,
+   "engaged_minutes_est": 135,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 11,
+   "user_message_count": 60,
+   "engaged_minutes_est": 180,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 12,
+   "user_message_count": 70,
+   "engaged_minutes_est": 210,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 13,
+   "user_message_count": 95,
+   "engaged_minutes_est": 285,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 14,
+   "user_message_count": 120,
+   "engaged_minutes_est": 360,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 15,
+   "user_message_count": 105,
+   "engaged_minutes_est": 315,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 16,
+   "user_message_count": 65,
+   "engaged_minutes_est": 195,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 17,
+   "user_message_count": 100,
+   "engaged_minutes_est": 300,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 18,
+   "user_message_count": 140,
+   "engaged_minutes_est": 420,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 19,
+   "user_message_count": 135,
+   "engaged_minutes_est": 405,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 20,
+   "user_message_count": 95,
+   "engaged_minutes_est": 285,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 21,
+   "user_message_count": 85,
+   "engaged_minutes_est": 255,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 22,
+   "user_message_count": 50,
+   "engaged_minutes_est": 150,
+   "source": "Muse 会話記録"
+  },
+  {
+   "hour": 23,
+   "user_message_count": 15,
+   "engaged_minutes_est": 45,
+   "source": "Muse 会話記録"
+  }
  ]
 }

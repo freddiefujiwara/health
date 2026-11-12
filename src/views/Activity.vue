@@ -16,6 +16,18 @@ const points = computed(() =>
   last30.value.map((r) => ({ date: r.date, value: r.engagedMinutesEst })),
 );
 
+const hours = computed(() => data.value?.chatActivityHours ?? []);
+const hourPoints = computed(() =>
+  hours.value.map((r) => ({ date: `${r.hour}時`, value: r.userMessageCount })),
+);
+const peakHoursText = computed(() => {
+  const top = [...hours.value]
+    .filter((r) => r.userMessageCount !== null)
+    .sort((a, b) => b.userMessageCount - a.userMessageCount)
+    .slice(0, 3);
+  return top.map((r) => `${r.hour}時台（${formatInteger(r.userMessageCount)}件）`).join("、");
+});
+
 const cards = computed(() => [
   { label: "直近7日 平均会話時間", value: formatDurationMinutes(average(last7.value.map((r) => r.engagedMinutesEst))) },
   { label: "直近30日 平均会話時間", value: formatDurationMinutes(average(last30.value.map((r) => r.engagedMinutesEst))) },
@@ -39,6 +51,14 @@ const cards = computed(() => [
       <BarChart :points="points" unit="分" color="#0ea5e9" />
       <p class="meta">
         会話時間はメッセージ間隔の合計による推定です（間隔は最大20分で打ち切り）。自動配信のメッセージも含むため、目安としてご覧ください。深夜帯は23:00〜翌4:29です。
+      </p>
+    </section>
+
+    <section v-if="hours.length" class="chart-card" style="margin-bottom: 16px">
+      <h2 class="section-title">時間帯別のメッセージ数（全期間）</h2>
+      <BarChart :points="hourPoints" unit="件" color="#f59e0b" label-type="plain" />
+      <p class="meta">
+        多い時間帯：{{ peakHoursText }}。記録開始から前日までの合計です。
       </p>
     </section>
 

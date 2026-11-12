@@ -139,6 +139,17 @@ function normalizeChatActivity(rows) {
     .sort(byDateAsc);
 }
 
+function normalizeChatActivityHours(rows) {
+  return rows
+    .filter((row) => row && row.hour !== null && row.hour !== undefined && row.hour !== "")
+    .map((row) => ({
+      hour: toNumber(row.hour),
+      userMessageCount: toNumber(row.user_message_count),
+      engagedMinutesEst: toNumber(row.engaged_minutes_est),
+    }))
+    .sort((a, b) => a.hour - b.hour);
+}
+
 function normalizeGoals(rows) {
   const goals = {
     startWeightKg: null,
@@ -196,6 +207,7 @@ export function normalizeHealth(payload) {
     periodSummaries: normalizePeriodSummaries(source.period_summaries ?? []),
     labResults: normalizeLabResults(source.lab_results ?? []),
     chatActivity: normalizeChatActivity(source.chat_activity ?? []),
+    chatActivityHours: normalizeChatActivityHours(source.chat_activity_hours ?? []),
     medicationPlan: source.medication_plan ?? [],
     medicationLog: source.medication_log ?? [],
     goals: normalizeGoals(source.goals_settings ?? []),
