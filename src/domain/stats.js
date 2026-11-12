@@ -8,13 +8,6 @@ export function firstOf(rows) {
   return rows.length ? rows[0] : null;
 }
 
-export function delta(current, baseline) {
-  if (current === null || current === undefined || baseline === null || baseline === undefined) {
-    return null;
-  }
-  return current - baseline;
-}
-
 export function average(values) {
   const nums = values.filter((v) => v !== null && v !== undefined);
   if (!nums.length) {

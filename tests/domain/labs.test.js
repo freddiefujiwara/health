@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { featuredLabSeries, groupLabResults, labItemSeries, labItemUnit, numericLabItems } from "../../src/domain/labs";
+import { featuredLabSeries, groupLabResults, labItemSeries, labItemUnit } from "../../src/domain/labs";
 
 const rows = [
   { date: "2026-08-20", panel: "血液検査", item: "γ-GTP", value: 178, valueNumber: 178, unit: "IU/L" },
@@ -18,11 +18,6 @@ describe("lab helpers", () => {
     expect(groups[0].panel).toBe("血液検査");
     expect(groups[0].rows).toHaveLength(3);
     expect(groupLabResults([])).toEqual([]);
-  });
-
-  it("lists items with at least two numeric values", () => {
-    expect(numericLabItems(rows)).toEqual(["γ-GTP", "AST"]);
-    expect(numericLabItems([])).toEqual([]);
   });
 
   it("builds a date-ascending numeric series for one item", () => {

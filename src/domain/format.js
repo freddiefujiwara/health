@@ -21,18 +21,6 @@ export function formatKg(value) {
   return `${formatDecimal(value)} kg`;
 }
 
-export function formatKcal(value) {
-  return `${formatInteger(value)} kcal`;
-}
-
-export function formatSigned(value, unit = "") {
-  if (value === null || value === undefined) {
-    return "-";
-  }
-  const sign = value > 0 ? "+" : "";
-  return `${sign}${formatInteger(value)}${unit}`;
-}
-
 export function formatPercentChange(current, baseline) {
   if (current === null || current === undefined || !baseline) {
     return "-";

@@ -2,11 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   formatDecimal,
   formatInteger,
-  formatKcal,
   formatKg,
   formatPercentChange,
   formatChartValue,
-  formatSigned,
 
 } from "../../src/domain/format";
 
@@ -28,15 +26,6 @@ describe("format helpers", () => {
   it("formats units", () => {
     expect(formatKg(91.5)).toBe("91.5 kg");
     expect(formatKg(null)).toBe("- kg");
-    expect(formatKcal(2000)).toBe("2,000 kcal");
-  });
-
-  it("formats signed values", () => {
-    expect(formatSigned(500)).toBe("+500");
-    expect(formatSigned(-936, " kcal")).toBe("-936 kcal");
-    expect(formatSigned(0)).toBe("0");
-    expect(formatSigned(null)).toBe("-");
-    expect(formatSigned(undefined)).toBe("-");
   });
 
   it("formats chart tooltip values", () => {
