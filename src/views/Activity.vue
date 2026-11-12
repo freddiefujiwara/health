@@ -19,21 +19,32 @@ const points = computed(() =>
 
 const hours = computed(() => data.value?.chatActivityHours ?? []);
 const dailyHours = computed(() => data.value?.chatActivityDailyHours ?? []);
-const selectedHourTab = ref("total");
-const hourTabs = computed(() => {
-  const dates = [...new Set(dailyHours.value.map((r) => r.date))].sort().reverse().slice(0, 7);
-  return [
-    { key: "total", label: "合計" },
-    ...dates.map((d) => ({ key: d, label: d.replaceAll("-", "/") })),
-  ];
-});
-const activeHourTab = computed(() =>
-  hourTabs.value.some((t) => t.key === selectedHourTab.value) ? selectedHourTab.value : "total",
+const hourView = ref("total");
+const hourDates = computed(() => [...new Set(dailyHours.value.map((r) => r.date))].sort().reverse());
+const hourKeys = computed(() => ["total", ...hourDates.value]);
+const activeHourKey = computed(() =>
+  hourKeys.value.includes(hourView.value) ? hourView.value : "total",
+);
+const hourIndex = computed(() => hourKeys.value.indexOf(activeHourKey.value));
+const canGoOlder = computed(() => hourIndex.value < hourKeys.value.length - 1);
+const canGoNewer = computed(() => hourIndex.value > 0);
+function goOlder() {
+  if (canGoOlder.value) {
+    hourView.value = hourKeys.value[hourIndex.value + 1];
+  }
+}
+function goNewer() {
+  if (canGoNewer.value) {
+    hourView.value = hourKeys.value[hourIndex.value - 1];
+  }
+}
+const activeHourLabel = computed(() =>
+  activeHourKey.value === "total" ? "合計" : activeHourKey.value.replaceAll("-", "/"),
 );
 const activeHourRows = computed(() =>
-  activeHourTab.value === "total"
+  activeHourKey.value === "total"
     ? hours.value
-    : dailyHours.value.filter((r) => r.date === activeHourTab.value),
+    : dailyHours.value.filter((r) => r.date === activeHourKey.value),
 );
 const hourPoints = computed(() =>
   activeHourRows.value.map((r) => ({ date: `${r.hour}時`, value: r.userMessageCount })),
@@ -43,22 +54,30 @@ const peakHoursText = computed(() => {
     .filter((r) => r.userMessageCount !== null)
     .sort((a, b) => b.userMessageCount - a.userMessageCount)
     .slice(0, 3);
-  return top.map((r) => `${r.hour}時台（${formatInteger(r.userMessageCount)}件）`).join("、");
+  return top.map((r) => `${r.hour}時台（${formatInteger(r.userMessageCount)}回）`).join("、");
 });
 const hourMetaText = computed(() => {
-  if (activeHourTab.value === "total") {
+  if (activeHourKey.value === "total") {
     return `多い時間帯：${peakHoursText.value}。記録開始から前日までの合計です。`;
   }
   const total = activeHourRows.value.reduce((sum, r) => sum + (r.userMessageCount ?? 0), 0);
-  const label = activeHourTab.value.replaceAll("-", "/");
-  return `多い時間帯：${peakHoursText.value}。${label} の合計は ${formatInteger(total)} 件です。`;
+  const label = activeHourKey.value.replaceAll("-", "/");
+  return `多い時間帯：${peakHoursText.value}。${label} の合計は ${formatInteger(total)} 回です。`;
 });
+
+const sleep = computed(() => data.value?.sleepEstimates ?? []);
+const sleepPoints = computed(() =>
+  sleep.value.slice(-30).map((r) => ({ date: r.date, value: r.durationMinutesEst })),
+);
+const sleepAvg7Text = computed(() =>
+  formatDurationMinutes(average(sleep.value.slice(-7).map((r) => r.durationMinutesEst))),
+);
 
 const cards = computed(() => [
   { label: "直近7日 平均使用時間", value: formatDurationMinutes(average(last7.value.map((r) => r.engagedMinutesEst))) },
   { label: "直近30日 平均使用時間", value: formatDurationMinutes(average(last30.value.map((r) => r.engagedMinutesEst))) },
-  { label: "直近7日 平均メッセージ数", value: `${formatInteger(average(last7.value.map((r) => r.userMessageCount)))} 件` },
-  { label: "直近7日 深夜帯メッセージ", value: `${formatInteger(sum(last7.value.map((r) => r.lateNightMessageCount)))} 件` },
+  { label: "直近7日 平均活動回数", value: `${formatInteger(average(last7.value.map((r) => r.userMessageCount)))} 回` },
+  { label: "直近7日 深夜帯の活動", value: `${formatInteger(sum(last7.value.map((r) => r.lateNightMessageCount)))} 回` },
   { label: "記録日数", value: `${activity.value.length} 日` },
 ]);
 </script>
@@ -80,22 +99,29 @@ const cards = computed(() => [
       </p>
     </section>
 
+    <section v-if="sleep.length" class="chart-card" style="margin-bottom: 16px">
+      <h2 class="section-title">推定睡眠時間（直近30日）</h2>
+      <LineChart :points="sleepPoints" unit="分" color="#8b5cf6" />
+      <p class="meta">
+        直近7日の平均は {{ sleepAvg7Text }} です。20時から翌8時までの間で、活動が最も長く途切れた区間を睡眠と推定しています。実際の睡眠とは異なる場合があります。
+      </p>
+    </section>
+
     <section v-if="hours.length" class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">時間帯別のメッセージ数</h2>
-      <div class="hour-tabs" role="tablist" aria-label="表示期間">
+      <h2 class="section-title">時間帯別の活動量</h2>
+      <div class="hour-nav">
+        <button type="button" class="hour-nav-btn" aria-label="前の日" :disabled="!canGoOlder" @click="goOlder">←</button>
+        <span class="hour-nav-label">{{ activeHourLabel }}</span>
+        <button type="button" class="hour-nav-btn" aria-label="次の日" :disabled="!canGoNewer" @click="goNewer">→</button>
         <button
-          v-for="tab in hourTabs"
-          :key="tab.key"
           type="button"
-          role="tab"
-          :aria-selected="tab.key === activeHourTab"
-          :class="tab.key === activeHourTab ? 'hour-tab is-active' : 'hour-tab'"
-          @click="selectedHourTab = tab.key"
+          :class="activeHourKey === 'total' ? 'hour-total-btn is-active' : 'hour-total-btn'"
+          @click="hourView = 'total'"
         >
-          {{ tab.label }}
+          合計
         </button>
       </div>
-      <BarChart :points="hourPoints" unit="件" color="#f59e0b" label-type="plain" />
+      <BarChart :points="hourPoints" unit="回" color="#f59e0b" label-type="plain" />
       <p class="meta">{{ hourMetaText }}</p>
     </section>
 
@@ -103,13 +129,13 @@ const cards = computed(() => [
       <h2 class="section-title">日別</h2>
       <table class="stack-table">
         <thead>
-          <tr><th>日付</th><th>使用時間</th><th>メッセージ</th><th>セッション</th><th>最初</th><th>最後</th><th>深夜帯</th></tr>
+          <tr><th>日付</th><th>使用時間</th><th>活動回数</th><th>セッション</th><th>最初</th><th>最後</th><th>深夜帯</th></tr>
         </thead>
         <tbody>
           <tr v-for="row in activityDesc" :key="row.date">
             <td data-label="日付">{{ row.date }}</td>
             <td data-label="使用時間">{{ formatDurationMinutes(row.engagedMinutesEst) }}</td>
-            <td data-label="メッセージ">{{ formatInteger(row.userMessageCount) }} 件</td>
+            <td data-label="活動回数">{{ formatInteger(row.userMessageCount) }} 回</td>
             <td data-label="セッション">{{ formatInteger(row.sessionCount) }}</td>
             <td data-label="最初">{{ row.firstMessageAt || "-" }}</td>
             <td data-label="最後">{{ row.lastMessageAt || "-" }}</td>
@@ -120,3 +146,51 @@ const cards = computed(() => [
     </section>
   </div>
 </template>
+
+<style scoped>
+.hour-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
+.hour-nav-btn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  background: var(--surface-elevated);
+  color: var(--link);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.hour-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hour-nav-label {
+  min-width: 104px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.hour-total-btn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: var(--surface-elevated);
+  color: var(--link);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.hour-total-btn.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+</style>

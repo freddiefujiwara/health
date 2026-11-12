@@ -12,6 +12,7 @@ describe("normalizeHealth", () => {
     expect(empty.chatActivity).toEqual([]);
     expect(empty.chatActivityHours).toEqual([]);
     expect(empty.chatActivityDailyHours).toEqual([]);
+    expect(empty.sleepEstimates).toEqual([]);
     expect(empty.medicationPlan).toEqual([]);
     expect(empty.medicationLog).toEqual([]);
     expect(empty.goals.startWeightKg).toBeNull();
@@ -215,5 +216,23 @@ describe("normalizeHealth lab results", () => {
       "2026-11-12 5",
     ]);
     expect(result.chatActivityDailyHours[0].engagedMinutesEst).toBeNull();
+  });
+
+  it("normalizes sleep estimates sorted by date", () => {
+    const result = normalizeHealth({
+      sleep_estimates: [
+        { date: "2026-11-12", sleep_start_est: "22:29", sleep_end_est: "04:14", duration_minutes_est: 345 },
+        { date: "2026-11-11", sleep_start_est: "22:50", sleep_end_est: "01:37", duration_minutes_est: "166" },
+        { date: "2026-11-10", duration_minutes_est: 228 },
+        { date: "2026-11-10", sleep_start_est: "23:00", sleep_end_est: "02:00", duration_minutes_est: 180 },
+        { date: "", sleep_start_est: "22:00", duration_minutes_est: 100 },
+        null,
+      ],
+    });
+    expect(result.sleepEstimates.map((r) => r.date)).toEqual(["2026-11-10", "2026-11-10", "2026-11-11", "2026-11-12"]);
+    expect(result.sleepEstimates[0].sleepStartEst).toBeNull();
+    expect(result.sleepEstimates[0].sleepEndEst).toBeNull();
+    expect(result.sleepEstimates[2].durationMinutesEst).toBe(166);
+    expect(result.sleepEstimates[3].sleepStartEst).toBe("22:29");
   });
 });

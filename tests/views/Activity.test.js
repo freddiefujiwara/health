@@ -64,9 +64,9 @@ describe("activity view hourly section", () => {
     store.source = "live";
     const wrapper = mount(Activity, { global: { plugins: [pinia] } });
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("時間帯別のメッセージ数");
-    expect(wrapper.text()).toContain("5時台（426件）");
-    expect(wrapper.text()).toContain("18時台（384件）");
+    expect(wrapper.text()).toContain("時間帯別の活動量");
+    expect(wrapper.text()).toContain("5時台（426回）");
+    expect(wrapper.text()).toContain("18時台（384回）");
   });
 });
 
@@ -96,16 +96,26 @@ describe("activity view tabs and line chart", () => {
     return mount(Activity, { global: { plugins: [pinia] } });
   }
 
-  it("shows total tab by default and switches to a day tab", async () => {
+  it("navigates days with prev/next arrows and returns to total", async () => {
     const wrapper = mountWithDailyHours();
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("時間帯別のメッセージ数");
-    expect(wrapper.text()).toContain("多い時間帯：5時台（426件）");
-    const tabs = wrapper.findAll(".hour-tab");
-    expect(tabs.map((t) => t.text())).toEqual(["合計", "2026/11/12", "2026/11/11"]);
-    await tabs[1].trigger("click");
-    expect(wrapper.text()).toContain("多い時間帯：5時台（28件）、17時台（24件）");
-    expect(wrapper.text()).toContain("2026/11/12 の合計は 52 件です");
+    expect(wrapper.text()).toContain("時間帯別の活動量");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
+    expect(wrapper.text()).toContain("多い時間帯：5時台（426回）");
+    const prev = wrapper.find('button[aria-label="前の日"]');
+    const next = wrapper.find('button[aria-label="次の日"]');
+    expect(next.attributes("disabled")).toBeDefined();
+    await prev.trigger("click");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12");
+    expect(wrapper.text()).toContain("多い時間帯：5時台（28回）、17時台（24回）");
+    expect(wrapper.text()).toContain("2026/11/12 の合計は 52 回です");
+    await next.trigger("click");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
+    await prev.trigger("click");
+    await prev.trigger("click");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/11");
+    await wrapper.find(".hour-total-btn").trigger("click");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
   });
 
   it("renders the daily minutes chart as a line chart", async () => {
@@ -114,5 +124,30 @@ describe("activity view tabs and line chart", () => {
     const lineChart = wrapper.find(".line-chart");
     expect(lineChart.exists()).toBe(true);
     expect(lineChart.findAll('path[fill="none"]').length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("activity view sleep section", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it("renders the sleep estimate chart with the 7-day average", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      sleep_estimates: [
+        { date: "2026-11-11", sleep_start_est: "22:50", sleep_end_est: "01:37", duration_minutes_est: 166 },
+        { date: "2026-11-12", sleep_start_est: "22:29", sleep_end_est: "04:14", duration_minutes_est: 345 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("推定睡眠時間（直近30日）");
+    expect(wrapper.text()).toContain("直近7日の平均は 4時間16分 です");
   });
 });
