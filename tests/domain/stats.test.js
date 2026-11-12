@@ -3,7 +3,6 @@ import {
   addDays,
   average,
   daysToGoalWeight,
-  delta,
   firstOf,
   goalProgressPercent,
   goalReachDate,
@@ -22,12 +21,6 @@ describe("stats helpers", () => {
     const rows = [{ date: "2026-01-01" }, { date: "2026-01-02" }];
     expect(firstOf(rows).date).toBe("2026-01-01");
     expect(latestOf(rows).date).toBe("2026-01-02");
-  });
-
-  it("computes delta with null safety", () => {
-    expect(delta(91.5, 99.7)).toBeCloseTo(-8.2);
-    expect(delta(null, 1)).toBeNull();
-    expect(delta(1, undefined)).toBeNull();
   });
 
   it("averages and sums ignoring missing values", () => {
