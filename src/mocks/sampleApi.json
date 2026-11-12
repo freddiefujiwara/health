@@ -2620,5 +2620,511 @@
    "engaged_minutes_est": 45,
    "source": "Muse 会話記録"
   }
+ ],
+ "chat_activity_daily_hours": [
+  {
+   "date": "2026-11-10",
+   "hour": 0,
+   "user_message_count": 0,
+   "engaged_minutes_est": 0,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 1,
+   "user_message_count": 2,
+   "engaged_minutes_est": 6,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 2,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 3,
+   "user_message_count": 2,
+   "engaged_minutes_est": 6,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 4,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 5,
+   "user_message_count": 9,
+   "engaged_minutes_est": 27,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 6,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 7,
+   "user_message_count": 10,
+   "engaged_minutes_est": 30,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 8,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 9,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 10,
+   "user_message_count": 1,
+   "engaged_minutes_est": 3,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 11,
+   "user_message_count": 4,
+   "engaged_minutes_est": 12,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 12,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 13,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 14,
+   "user_message_count": 10,
+   "engaged_minutes_est": 30,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 15,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 16,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 17,
+   "user_message_count": 9,
+   "engaged_minutes_est": 27,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 18,
+   "user_message_count": 9,
+   "engaged_minutes_est": 27,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 19,
+   "user_message_count": 11,
+   "engaged_minutes_est": 33,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 20,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 21,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 22,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-10",
+   "hour": 23,
+   "user_message_count": 0,
+   "engaged_minutes_est": 0,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 0,
+   "user_message_count": 2,
+   "engaged_minutes_est": 6,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 1,
+   "user_message_count": 0,
+   "engaged_minutes_est": 0,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 2,
+   "user_message_count": 4,
+   "engaged_minutes_est": 12,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 3,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 4,
+   "user_message_count": 3,
+   "engaged_minutes_est": 9,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 5,
+   "user_message_count": 12,
+   "engaged_minutes_est": 36,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 6,
+   "user_message_count": 4,
+   "engaged_minutes_est": 12,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 7,
+   "user_message_count": 8,
+   "engaged_minutes_est": 24,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 8,
+   "user_message_count": 10,
+   "engaged_minutes_est": 30,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 9,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 10,
+   "user_message_count": 4,
+   "engaged_minutes_est": 12,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 11,
+   "user_message_count": 2,
+   "engaged_minutes_est": 6,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 12,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 13,
+   "user_message_count": 9,
+   "engaged_minutes_est": 27,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 14,
+   "user_message_count": 8,
+   "engaged_minutes_est": 24,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 15,
+   "user_message_count": 9,
+   "engaged_minutes_est": 27,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 16,
+   "user_message_count": 3,
+   "engaged_minutes_est": 9,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 17,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 18,
+   "user_message_count": 12,
+   "engaged_minutes_est": 36,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 19,
+   "user_message_count": 9,
+   "engaged_minutes_est": 27,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 20,
+   "user_message_count": 8,
+   "engaged_minutes_est": 24,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 21,
+   "user_message_count": 4,
+   "engaged_minutes_est": 12,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 22,
+   "user_message_count": 4,
+   "engaged_minutes_est": 12,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-11",
+   "hour": 23,
+   "user_message_count": 3,
+   "engaged_minutes_est": 9,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 0,
+   "user_message_count": 0,
+   "engaged_minutes_est": 0,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 1,
+   "user_message_count": 3,
+   "engaged_minutes_est": 9,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 2,
+   "user_message_count": 2,
+   "engaged_minutes_est": 6,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 3,
+   "user_message_count": 3,
+   "engaged_minutes_est": 9,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 4,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 5,
+   "user_message_count": 10,
+   "engaged_minutes_est": 30,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 6,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 7,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 8,
+   "user_message_count": 8,
+   "engaged_minutes_est": 24,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 9,
+   "user_message_count": 8,
+   "engaged_minutes_est": 24,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 10,
+   "user_message_count": 2,
+   "engaged_minutes_est": 6,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 11,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 12,
+   "user_message_count": 3,
+   "engaged_minutes_est": 9,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 13,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 14,
+   "user_message_count": 11,
+   "engaged_minutes_est": 33,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 15,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 16,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 17,
+   "user_message_count": 5,
+   "engaged_minutes_est": 15,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 18,
+   "user_message_count": 10,
+   "engaged_minutes_est": 30,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 19,
+   "user_message_count": 12,
+   "engaged_minutes_est": 36,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 20,
+   "user_message_count": 6,
+   "engaged_minutes_est": 18,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 21,
+   "user_message_count": 7,
+   "engaged_minutes_est": 21,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 22,
+   "user_message_count": 2,
+   "engaged_minutes_est": 6,
+   "source": "Muse 会話記録"
+  },
+  {
+   "date": "2026-11-12",
+   "hour": 23,
+   "user_message_count": 1,
+   "engaged_minutes_est": 3,
+   "source": "Muse 会話記録"
+  }
  ]
 }
