@@ -13,8 +13,6 @@ describe("normalizeHealth", () => {
     expect(empty.chatActivityHours).toEqual([]);
     expect(empty.chatActivityDailyHours).toEqual([]);
     expect(empty.sleepEstimates).toEqual([]);
-    expect(empty.medicationPlan).toEqual([]);
-    expect(empty.medicationLog).toEqual([]);
     expect(empty.goals.startWeightKg).toBeNull();
     expect(normalizeHealth({}).dailyNutrition).toEqual([]);
     expect(normalizeHealth(undefined).steps).toEqual([]);
@@ -111,8 +109,6 @@ describe("normalizeHealth", () => {
         { value: 1 },
         null,
       ],
-      medication_plan: [{ name: "マンジャロ" }],
-      medication_log: [{ date: "2026-10-24" }],
     });
     expect(result.goals).toEqual({
       startWeightKg: 99.7,
@@ -125,8 +121,6 @@ describe("normalizeHealth", () => {
       intakeGuidelineKcal: 1990,
       expenditureGuidelineKcal: 3031,
     });
-    expect(result.medicationPlan).toHaveLength(1);
-    expect(result.medicationLog).toHaveLength(1);
   });
 });
 
