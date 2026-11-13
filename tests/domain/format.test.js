@@ -6,10 +6,18 @@ import {
   formatPercentChange,
   formatChartValue,
   formatDurationMinutes,
+  formatDateWithWeekday,
 
 } from "../../src/domain/format";
 
 describe("format helpers", () => {
+  it("formats a date with its weekday", () => {
+    expect(formatDateWithWeekday("2026-11-12")).toBe("2026/11/12（木）");
+    expect(formatDateWithWeekday("2026-11-15")).toBe("2026/11/15（日）");
+    expect(formatDateWithWeekday("")).toBe("");
+    expect(formatDateWithWeekday(null)).toBe("");
+  });
+
   it("formats integers with ja-JP grouping and dash for missing values", () => {
     expect(formatInteger(12345)).toBe("12,345");
     expect(formatInteger(1234.6)).toBe("1,235");
