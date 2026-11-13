@@ -37,11 +37,46 @@ describe("activity view", () => {
     expect(wrapper.text()).toContain("睡眠時間（直近30日・7日移動平均）");
     const rows = wrapper.findAll("tbody tr");
     expect(rows).toHaveLength(2);
+    expect(wrapper.find("thead").text()).toContain("睡眠時間");
+    expect(wrapper.find("thead").text()).toContain("深夜帯活動時間");
+    expect(wrapper.find("thead").text()).not.toContain("セッション");
     expect(rows[0].text()).toContain("2026-11-12");
     expect(rows[0].text()).toContain("14時間30分");
-    expect(rows[0].text()).toContain("04:14");
+    expect(rows[0].findAll("td")).toHaveLength(4);
     expect(rows[1].text()).toContain("2026-11-11");
     expect(rows[1].text()).toContain("18時間15分");
+  });
+
+  it("joins sleep and late-night minutes into the daily table by date", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    const dailyHours = [];
+    for (let h = 0; h < 24; h += 1) {
+      const late = { 23: 30, 0: 60, 4: 30 };
+      dailyHours.push({
+        date: "2026-11-12",
+        hour: h,
+        user_message_count: 0,
+        engaged_minutes_est: late[h] ?? 0,
+      });
+    }
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_daily_hours: dailyHours,
+      sleep_estimates: [
+        { date: "2026-11-12", sleep_start_est: "22:29", sleep_end_est: "04:14", duration_minutes_est: 345 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    const rows = wrapper.findAll("tbody tr");
+    // 2026-11-12: activity 14時間30分, sleep 5時間45分, late night 2時間
+    expect(rows[0].text()).toContain("14時間30分");
+    expect(rows[0].text()).toContain("5時間45分");
+    expect(rows[0].text()).toContain("2時間");
+    // 2026-11-11 has no sleep row: shown as "-"
+    expect(rows[1].text()).toContain("-");
   });
 });
 

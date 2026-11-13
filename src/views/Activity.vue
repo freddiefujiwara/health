@@ -147,6 +147,18 @@ const sleepBands = computed(() => {
 });
 const hourBands = computed(() => sleepBands.value);
 
+// Daily table rows: activity time, sleep time and late-night activity
+// time per date, joined from the three series by date.
+const dailyRows = computed(() => {
+  const sleepByDate = new Map(sleep.value.map((r) => [r.date, r.durationMinutesEst]));
+  return activityDesc.value.map((r) => ({
+    date: r.date,
+    activityMinutes: r.engagedMinutesEst,
+    sleepMinutes: sleepByDate.get(r.date) ?? null,
+    lateNightMinutes: lateNightMinutesByDate.value.get(r.date) ?? 0,
+  }));
+});
+
 const cards = computed(() => [
   { label: "直近7日 平均活動時間", value: formatDurationMinutes(average(last7.value.map((r) => r.engagedMinutesEst))) },
   { label: "直近30日 平均活動時間", value: formatDurationMinutes(average(last30.value.map((r) => r.engagedMinutesEst))) },
@@ -199,17 +211,14 @@ const cards = computed(() => [
       <h2 class="section-title">日別</h2>
       <table class="stack-table">
         <thead>
-          <tr><th>日付</th><th>活動時間</th><th>活動回数</th><th>セッション</th><th>最初</th><th>最後</th><th>深夜帯</th></tr>
+          <tr><th>日付</th><th>活動時間</th><th>睡眠時間</th><th>深夜帯活動時間</th></tr>
         </thead>
         <tbody>
-          <tr v-for="row in activityDesc" :key="row.date">
+          <tr v-for="row in dailyRows" :key="row.date">
             <td data-label="日付">{{ row.date }}</td>
-            <td data-label="活動時間">{{ formatDurationMinutes(row.engagedMinutesEst) }}</td>
-            <td data-label="活動回数">{{ formatInteger(row.userMessageCount) }} 回</td>
-            <td data-label="セッション">{{ formatInteger(row.sessionCount) }}</td>
-            <td data-label="最初">{{ row.firstMessageAt || "-" }}</td>
-            <td data-label="最後">{{ row.lastMessageAt || "-" }}</td>
-            <td data-label="深夜帯">{{ formatInteger(row.lateNightMessageCount) }} 件</td>
+            <td data-label="活動時間">{{ formatDurationMinutes(row.activityMinutes) }}</td>
+            <td data-label="睡眠時間">{{ row.sleepMinutes === null ? "-" : formatDurationMinutes(row.sleepMinutes) }}</td>
+            <td data-label="深夜帯活動時間">{{ formatDurationMinutes(row.lateNightMinutes) }}</td>
           </tr>
         </tbody>
       </table>
