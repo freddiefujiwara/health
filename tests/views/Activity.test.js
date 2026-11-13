@@ -147,14 +147,14 @@ describe("activity view tabs and line chart", () => {
     const next = wrapper.find('button[aria-label="次の日"]');
     expect(next.attributes("disabled")).toBeDefined();
     await prev.trigger("click");
-    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12（木）");
     expect(wrapper.text()).toContain("多い時間帯：5時台（28回）、17時台（24回）");
-    expect(wrapper.text()).toContain("2026/11/12 の合計は 52 回です");
+    expect(wrapper.text()).toContain("2026/11/12（木） の合計は 52 回です");
     await next.trigger("click");
     expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
     await prev.trigger("click");
     await prev.trigger("click");
-    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/11");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/11（水）");
     await wrapper.find(".hour-total-btn").trigger("click");
     expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
   });
@@ -189,7 +189,7 @@ describe("activity view tabs and line chart", () => {
     expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
     expect(wrapper.findAll("rect.band")).toHaveLength(0);
     await wrapper.find('button[aria-label="前の日"]').trigger("click");
-    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12（木）");
     expect(wrapper.findAll("rect.band")).toHaveLength(1);
     expect(wrapper.text()).toContain("紫の帯は推定睡眠として数えた区間です（22:29–04:14、5時間45分）");
     const bandLabels = wrapper.findAll("text.band-label");

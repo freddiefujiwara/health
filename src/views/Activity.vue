@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import BarChart from "@/components/BarChart.vue";
 import LineChart from "@/components/LineChart.vue";
-import { formatDurationMinutes, formatInteger } from "@/domain/format";
+import { formatDateWithWeekday, formatDurationMinutes, formatInteger } from "@/domain/format";
 import { average, movingAverage, recentRows } from "@/domain/stats";
 
 const { data } = useHealthData();
@@ -49,7 +49,7 @@ function goNewer() {
   }
 }
 const activeHourLabel = computed(() =>
-  activeHourKey.value === "total" ? "合計" : activeHourKey.value.replaceAll("-", "/"),
+  activeHourKey.value === "total" ? "合計" : formatDateWithWeekday(activeHourKey.value),
 );
 const activeHourRows = computed(() =>
   activeHourKey.value === "total"
@@ -71,7 +71,7 @@ const hourMetaText = computed(() => {
     return `多い時間帯：${peakHoursText.value}。記録開始から前日までの合計です。`;
   }
   const total = activeHourRows.value.reduce((sum, r) => sum + (r.userMessageCount ?? 0), 0);
-  const label = activeHourKey.value.replaceAll("-", "/");
+  const label = formatDateWithWeekday(activeHourKey.value);
   const bandNote = sleepBands.value.length
     ? `紫の帯は推定睡眠として数えた区間です（${sleepBands.value.map((b) => b.note).join("／")}）。`
     : "";

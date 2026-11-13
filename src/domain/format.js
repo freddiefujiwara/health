@@ -60,3 +60,15 @@ export function formatChartValue(value) {
     maximumFractionDigits: 2,
   });
 }
+
+const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
+
+/** "2026-11-12" -> "2026/11/12（木）". Returns "" for empty input. */
+export function formatDateWithWeekday(date) {
+  if (!date) {
+    return "";
+  }
+  const [y, m, d] = date.split("-").map(Number);
+  const weekday = WEEKDAYS_JA[new Date(y, m - 1, d).getDay()];
+  return `${date.replaceAll("-", "/")}（${weekday}）`;
+}
