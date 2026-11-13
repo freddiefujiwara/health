@@ -201,7 +201,13 @@ const cards = computed(() => [
 
     <section class="chart-card" style="margin-bottom: 16px">
       <h2 class="section-title">睡眠時間（直近30日・7日移動平均）</h2>
-      <LineChart :points="points" unit="分" color="#8b5cf6" />
+      <LineChart
+        :points="points"
+        unit="分"
+        color="#8b5cf6"
+        :y-tick-step="30"
+        :y-tick-format="(v) => (v / 60).toFixed(1)"
+      />
       <p class="meta">
         線は各日の推定睡眠時間を7日移動平均したものです。深夜帯は23:00〜翌4:29です。
       </p>
