@@ -9,8 +9,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Keep d3 out of the entry chunk: it is only needed by the
-        // lazily loaded chart views.
-        manualChunks: { d3: ["d3"] },
+        // lazily loaded chart views. (Function form: rolldown-based
+        // Vite no longer accepts the object form.)
+        manualChunks: (id) => (/node_modules\/(d3|d3-[^/]+)\//.test(id) ? "d3" : undefined),
       },
     },
   },
