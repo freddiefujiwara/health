@@ -30,9 +30,11 @@ describe("activity view", () => {
   it("renders summary cards and the daily table newest first", async () => {
     const wrapper = buildWrapper();
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("記録日数");
-    expect(wrapper.text()).toContain("2 日");
-    expect(wrapper.text()).toContain("スマホ使用時間（直近30日）");
+    expect(wrapper.text()).toContain("直近7日 平均活動時間");
+    expect(wrapper.text()).toContain("直近30日 平均活動時間");
+    expect(wrapper.text()).not.toContain("記録日数");
+    expect(wrapper.text()).not.toContain("平均活動回数");
+    expect(wrapper.text()).toContain("活動時間（直近30日）");
     const rows = wrapper.findAll("tbody tr");
     expect(rows).toHaveLength(2);
     expect(rows[0].text()).toContain("2026-11-12");
@@ -178,9 +180,37 @@ describe("activity view sleep card", () => {
     store.source = "live";
     const wrapper = mount(Activity, { global: { plugins: [pinia] } });
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("直近7日 平均推定睡眠");
+    expect(wrapper.text()).toContain("直近7日 平均睡眠時間");
+    expect(wrapper.text()).toContain("直近30日 平均睡眠時間");
     expect(wrapper.text()).toContain("4時間16分");
     expect(wrapper.text()).not.toContain("推定睡眠時間（直近30日）");
+  });
+
+  it("shows late-night activity time averaged from the hourly breakdown", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    const dailyHours = [];
+    for (let h = 0; h < 24; h += 1) {
+      const late = { 23: 30, 0: 60, 4: 30 };
+      dailyHours.push({
+        date: "2026-11-12",
+        hour: h,
+        user_message_count: 0,
+        engaged_minutes_est: late[h] ?? (h === 12 ? 999 : 0),
+      });
+    }
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_daily_hours: dailyHours,
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    // 2026-11-12 late night = 30+60+30 = 120 min; 2026-11-11 has no hourly
+    // rows (0 min), so the 7-day average is 60 min. The 999 min at noon must
+    // not be counted.
+    expect(wrapper.text()).toContain("直近7日 深夜帯の活動時間1時間");
+    expect(wrapper.text()).toContain("直近30日 深夜帯の活動時間1時間");
   });
 
   it("places the hourly chart above the daily usage chart", async () => {
@@ -197,6 +227,6 @@ describe("activity view sleep card", () => {
     await wrapper.vm.$nextTick();
     const text = wrapper.text();
     expect(text.indexOf("時間帯別の活動量")).toBeGreaterThanOrEqual(0);
-    expect(text.indexOf("時間帯別の活動量")).toBeLessThan(text.indexOf("スマホ使用時間（直近30日）"));
+    expect(text.indexOf("時間帯別の活動量")).toBeLessThan(text.indexOf("活動時間（直近30日）"));
   });
 });
