@@ -46,7 +46,7 @@
   },
   {
    "item": "見方",
-   "value": "日々の記録は daily_nutrition、測定は body_composition、投薬は medication_plan / medication_log を見る"
+   "value": "日々の記録は daily_nutrition、測定は body_compositionを見る"
   }
  ],
  "daily_nutrition": [
@@ -2288,31 +2288,6 @@
    "fat_percent": 26.7,
    "fat_mass_kg": 4.6,
    "source": "本人が共有したTANITA測定表"
-  }
- ],
- "medication_plan": [
-  {
-   "name": "マンジャロ",
-   "generic_name": "チルゼパチド",
-   "dose_mg": 2.5,
-   "route": "皮下注射",
-   "frequency": "週1回",
-   "scheduled_weekday": "土曜日",
-   "started_on": "2026-07-25",
-   "started_on_precision": "概ねこの日",
-   "planned_course": "医師の指示による6か月",
-   "planned_end": "2027年1月下旬頃",
-   "status": "2026-10-31時点で継続中"
-  }
- ],
- "medication_log": [
-  {
-   "date": "2026-10-24",
-   "medication": "マンジャロ",
-   "dose_mg": 2.5,
-   "status": "投与済み",
-   "reported_at": "2026-10-25T01:39:00+09:00",
-   "notes": "土曜分を少し遅れて実施。正確な投与時刻は未確認"
   }
  ],
  "goals_settings": [

@@ -78,8 +78,6 @@ const predictionCards = computed(() => {
   ];
 });
 
-const plan = computed(() => data.value?.medicationPlan?.[0] ?? null);
-const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
 </script>
 
 <template>
@@ -122,29 +120,6 @@ const log = computed(() => [...(data.value?.medicationLog ?? [])].reverse());
       <p class="meta" style="margin-top: 8px">
         直近30日（完了日）の平均収支が続くと仮定し、7,700 kcal ≒ 1 kg で換算した単純推計です。水分や筋肉量の変化は含みません。
       </p>
-    </section>
-
-    <section v-if="plan" class="table-wrap">
-      <h2 class="section-title">投薬</h2>
-      <p>
-        {{ plan.name }}（{{ plan.generic_name }}）{{ plan.dose_mg }}mg / {{ plan.frequency }}（{{ plan.scheduled_weekday }}）
-      </p>
-      <p class="meta">
-        開始：{{ plan.started_on }}（{{ plan.started_on_precision }}） / 期間：{{ plan.planned_course }} / 終了予定：{{ plan.planned_end }}
-      </p>
-      <table v-if="log.length" style="margin-top: 8px">
-        <thead>
-          <tr><th>日付</th><th>薬剤</th><th>用量</th><th>状態</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in log" :key="row.date">
-            <td>{{ row.date }}</td>
-            <td>{{ row.medication }}</td>
-            <td>{{ row.dose_mg }} mg</td>
-            <td>{{ row.status }}</td>
-          </tr>
-        </tbody>
-      </table>
     </section>
 
     <ShareSessionCard v-if="store.hasSession && !store.shareMode" />

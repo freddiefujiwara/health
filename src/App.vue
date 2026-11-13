@@ -46,7 +46,7 @@ watch(
       <h1>健康可視化</h1>
       <div class="header-actions">
         <nav class="nav" aria-label="Primary">
-          <RouterLink to="/overview">概要</RouterLink>
+          <RouterLink to="/">概要</RouterLink>
           <RouterLink to="/body">体組成</RouterLink>
           <RouterLink to="/nutrition">食事</RouterLink>
           <RouterLink to="/steps">歩数</RouterLink>

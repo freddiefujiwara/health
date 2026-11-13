@@ -234,8 +234,6 @@ export function normalizeHealth(payload) {
     chatActivityHours: normalizeChatActivityHours(source.chat_activity_hours ?? []),
     chatActivityDailyHours: normalizeChatActivityDailyHours(source.chat_activity_daily_hours ?? []),
     sleepEstimates: normalizeSleepEstimates(source.sleep_estimates ?? []),
-    medicationPlan: source.medication_plan ?? [],
-    medicationLog: source.medication_log ?? [],
     goals: normalizeGoals(source.goals_settings ?? []),
   };
 }

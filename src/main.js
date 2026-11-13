@@ -21,8 +21,8 @@ if (isStagingBuild(import.meta.env)) {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: "/", redirect: "/overview" },
-    { path: "/overview", component: Overview },
+    { path: "/", component: Overview },
+    { path: "/overview", redirect: "/" },
     { path: "/body", component: BodyComposition },
     { path: "/nutrition", component: Nutrition },
     { path: "/steps", component: Steps },
