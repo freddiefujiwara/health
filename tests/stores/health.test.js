@@ -384,3 +384,159 @@ describe("health store", () => {
     await expect(store.revokeShare()).rejects.toThrow("HTTP 503");
   });
 });
+
+describe("health store payload cache", () => {
+  const cacheKey = "health-payload-cache-v1";
+  const seedCache = (savedAt, body) =>
+    sessionStorage.setItem(cacheKey, JSON.stringify({ mode: "google", savedAt, payload: body }));
+
+  it("serves a fresh cached payload without fetching", async () => {
+    seedCache(Date.now(), payload);
+    const fetchMock = vi.fn(async () => okResponse({}));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.source).toBe("live");
+    expect(store.data.bodyComposition[0].weightKg).toBe(99.7);
+  });
+
+  it("shows a stale cached payload and refreshes it from the API", async () => {
+    seedCache(Date.now() - 120_000, payload);
+    const fresh = {
+      body_composition: [{ date: "2026-11-12", measurement_type: "TANITA", weight_kg: 88.5 }],
+      goals_settings: [{ item: "最終目標", value: 80 }],
+    };
+    const fetchMock = vi.fn(async () => okResponse(fresh));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(store.data.bodyComposition[0].weightKg).toBe(88.5);
+    const cached = JSON.parse(sessionStorage.getItem(cacheKey));
+    expect(cached.payload.body_composition[0].weight_kg).toBe(88.5);
+  });
+
+  it("clears cache and data when the refresh hits an auth error", async () => {
+    seedCache(Date.now() - 120_000, payload);
+    const fetchMock = vi.fn(async () => okResponse({ status: 401, error: "unauthorized" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(store.data).toBeNull();
+    expect(store.error).toContain("AUTH 401");
+    expect(sessionStorage.getItem(cacheKey)).toBeNull();
+  });
+
+  it("writes the fetched payload to the cache", async () => {
+    const fetchMock = vi.fn(async () => okResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    const cached = JSON.parse(sessionStorage.getItem(cacheKey));
+    expect(cached.mode).toBe("google");
+    expect(cached.payload.body_composition[0].weight_kg).toBe(99.7);
+  });
+});
+
+describe("health store payload cache edge cases", () => {
+  const cacheKey = "health-payload-cache-v1";
+
+  it("ignores a cache entry stored for a different auth mode", async () => {
+    sessionStorage.setItem(
+      cacheKey,
+      JSON.stringify({ mode: "share", savedAt: Date.now(), payload }),
+    );
+    const fetchMock = vi.fn(async () => okResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores cache entries without a payload or with malformed JSON", async () => {
+    const fetchMock = vi.fn(async () => okResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    sessionStorage.setItem(cacheKey, JSON.stringify({ mode: "google", savedAt: Date.now() }));
+    await store.fetchHealth();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    sessionStorage.setItem(cacheKey, "null");
+    store.data = null;
+    await store.fetchHealth();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    sessionStorage.setItem(cacheKey, "{broken");
+    store.data = null;
+    await store.fetchHealth();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("ignores a cache entry older than the maximum age", async () => {
+    sessionStorage.setItem(
+      cacheKey,
+      JSON.stringify({ mode: "google", savedAt: Date.now() - 13 * 60 * 60 * 1000, payload }),
+    );
+    const fetchMock = vi.fn(async () => okResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps showing the stale cache when the background refresh fails", async () => {
+    sessionStorage.setItem(
+      cacheKey,
+      JSON.stringify({ mode: "google", savedAt: Date.now() - 120_000, payload }),
+    );
+    const fetchMock = vi.fn(async () => {
+      throw new Error("network down");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(store.data.bodyComposition[0].weightKg).toBe(99.7);
+    expect(store.error).toBe("");
+    expect(store.source).toBe("live");
+  });
+
+  it("tolerates storage failures when writing and clearing the cache", async () => {
+    const realSession = globalThis.sessionStorage;
+    vi.stubGlobal("sessionStorage", {
+      getItem: (key) => realSession.getItem(key),
+      setItem: () => {
+        throw new Error("quota exceeded");
+      },
+      removeItem: () => {
+        throw new Error("storage unavailable");
+      },
+    });
+    const fetchMock = vi.fn(async () => okResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(store.source).toBe("live");
+    await store.revokeSession();
+    vi.stubGlobal("sessionStorage", realSession);
+  });
+});
+
+describe("health store payload cache in share mode", () => {
+  it("restores the share expiry from a fresh cached payload without fetching", async () => {
+    vi.stubGlobal("location", { hash: `#share=${"a".repeat(64)}` });
+    sessionStorage.setItem(
+      "health-payload-cache-v1",
+      JSON.stringify({
+        mode: "share",
+        savedAt: Date.now(),
+        payload: { ...payload, _share: { expires_at: "2026-12-02T07:56:00.000Z" } },
+      }),
+    );
+    const fetchMock = vi.fn(async () => okResponse({}));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.shareMode).toBe(true);
+    expect(store.shareExpiresAt).toBe("2026-12-02T07:56:00.000Z");
+  });
+});

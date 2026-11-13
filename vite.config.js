@@ -5,6 +5,16 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig({
   base: "/health/",
   plugins: [vue()],
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep d3 out of the entry chunk: it is only needed by the
+        // lazily loaded chart views. (Function form: rolldown-based
+        // Vite no longer accepts the object form.)
+        manualChunks: (id) => (/node_modules\/(d3|d3-[^/]+)\//.test(id) ? "d3" : undefined),
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

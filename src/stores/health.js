@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { normalizeHealth } from "@/domain/normalize";
 import { parseShareToken } from "@/domain/share";
-import sampleApi from "@/mocks/sampleApi.json";
 
 // The API endpoint can be overridden at build time (staging builds set
 // VITE_GAS_ENDPOINT to the staging deployment). Production builds leave
@@ -9,6 +8,51 @@ import sampleApi from "@/mocks/sampleApi.json";
 export const HEALTH_API_URL =
   import.meta.env.VITE_GAS_ENDPOINT ??
   "https://script.google.com/macros/s/AKfycbxGka-swbhzKbZsVUVzCbIpFHkkBf1Wr8DDsyBsHJtWhZv0LLWjlMqOSQbHHP2Cc3-O/exec";
+const PAYLOAD_CACHE_STORAGE_KEY = "health-payload-cache-v1";
+// A cached payload younger than this is used as-is; an older one is shown
+// immediately and refreshed in the background (stale-while-revalidate).
+const PAYLOAD_CACHE_FRESH_MS = 60 * 1000;
+// Never resurrect a payload older than this, even from a long-lived tab.
+const PAYLOAD_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+function readPayloadCache(mode) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(PAYLOAD_CACHE_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.mode !== mode || !parsed.payload) {
+      return null;
+    }
+    if (Date.now() - parsed.savedAt > PAYLOAD_CACHE_MAX_AGE_MS) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePayloadCache(mode, payload) {
+  try {
+    globalThis.sessionStorage?.setItem(
+      PAYLOAD_CACHE_STORAGE_KEY,
+      JSON.stringify({ mode, savedAt: Date.now(), payload }),
+    );
+  } catch {
+    // Storage may be unavailable or full; caching is best-effort.
+  }
+}
+
+function clearPayloadCache() {
+  try {
+    globalThis.sessionStorage?.removeItem(PAYLOAD_CACHE_STORAGE_KEY);
+  } catch {
+    // Ignore.
+  }
+}
+
 const SESSION_TOKEN_STORAGE_KEY = "health-session-token";
 const LEGACY_ID_TOKEN_STORAGE_KEY = "health-google-id-token";
 const SHARE_TOKEN_STORAGE_KEY = "health-share-token";
@@ -94,6 +138,21 @@ export const useHealthStore = defineStore("health", {
         : shareToken
           ? buildApiUrlWithShare(shareToken)
           : HEALTH_API_URL;
+      const cacheMode = sessionToken ? "session" : shareToken ? "share" : "google";
+      const cached = readPayloadCache(cacheMode);
+      if (cached) {
+        this.rawResponse = cached.payload;
+        this.shareExpiresAt = cached.payload?._share?.expires_at ?? "";
+        this.data = normalizeHealth(cached.payload);
+        this.source = "live";
+        if (Date.now() - cached.savedAt < PAYLOAD_CACHE_FRESH_MS) {
+          this.loading = false;
+          return;
+        }
+        // Stale cache: keep it on screen (loading stays off) and refresh
+        // in the background via the normal request below.
+        this.loading = false;
+      }
       try {
         while (true) {
           const response = await fetch(apiUrl);
@@ -118,15 +177,22 @@ export const useHealthStore = defineStore("health", {
           this.shareExpiresAt = json?._share?.expires_at ?? "";
           this.data = normalizeHealth(json);
           this.source = "live";
+          writePayloadCache(cacheMode, json);
           break;
         }
       } catch (error) {
         const message = error?.message ?? "unknown error";
         if (message.startsWith("AUTH ")) {
+          clearPayloadCache();
           this.error = message;
           this.data = null;
           this.source = "";
           this.rawResponse = null;
+          return;
+        }
+
+        if (cached && this.data) {
+          // Background refresh failed; keep showing the cached payload.
           return;
         }
 
@@ -148,6 +214,9 @@ export const useHealthStore = defineStore("health", {
           return;
         }
 
+        // The sample payload is only a development fallback; load it on
+        // demand so it stays out of the initial bundle.
+        const { default: sampleApi } = await import("@/mocks/sampleApi.json");
         this.error = `${message} (fallback to mock)`;
         this.rawResponse = sampleApi;
         this.data = normalizeHealth(sampleApi);
@@ -183,6 +252,7 @@ export const useHealthStore = defineStore("health", {
     // copy is dropped even when the API call fails.
     async revokeSession() {
       const sessionToken = getSessionToken();
+      clearPayloadCache();
       setSessionToken("");
       this.hasSession = false;
       if (!sessionToken) {

@@ -2,12 +2,15 @@ import { createApp } from "vue";
 import { createPinia } from "pinia";
 import { createRouter, createWebHistory } from "vue-router";
 import App from "./App.vue";
-import Overview from "./views/Overview.vue";
-import BodyComposition from "./views/BodyComposition.vue";
-import Nutrition from "./views/Nutrition.vue";
-import Steps from "./views/Steps.vue";
-import Labs from "./views/Labs.vue";
-import Activity from "./views/Activity.vue";
+
+// Views are loaded lazily per route so the initial bundle stays small;
+// chart-heavy views (with d3) only download when visited.
+const Overview = () => import("./views/Overview.vue");
+const BodyComposition = () => import("./views/BodyComposition.vue");
+const Nutrition = () => import("./views/Nutrition.vue");
+const Steps = () => import("./views/Steps.vue");
+const Labs = () => import("./views/Labs.vue");
+const Activity = () => import("./views/Activity.vue");
 import "./style.css";
 import { isStagingBuild, showStagingBanner } from "./staging-banner.js";
 
