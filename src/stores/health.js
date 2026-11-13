@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { normalizeHealth } from "@/domain/normalize";
 import { parseShareToken } from "@/domain/share";
+import { isStagingBuild } from "@/staging-banner.js";
 
 // The API endpoint can be overridden at build time (staging builds set
 // VITE_GAS_ENDPOINT to the staging deployment). Production builds leave
@@ -53,9 +54,13 @@ function clearPayloadCache() {
   }
 }
 
-const SESSION_TOKEN_STORAGE_KEY = "health-session-token";
+// Storage keys are environment-scoped: localStorage is shared across
+// the whole origin, so staging builds must never read or overwrite the
+// production tokens (same pattern as tweet/alarm).
+const storageKey = (base) => (isStagingBuild() ? `${base}:staging` : base);
+export const SESSION_TOKEN_STORAGE_KEY = storageKey("health-session-token");
 const LEGACY_ID_TOKEN_STORAGE_KEY = "health-google-id-token";
-const SHARE_TOKEN_STORAGE_KEY = "health-share-token";
+export const SHARE_TOKEN_STORAGE_KEY = storageKey("health-share-token");
 
 // Sign-in uses a 30-day owner session issued by the API in exchange for
 // the (1-hour) Google ID token; the raw ID token is never stored.

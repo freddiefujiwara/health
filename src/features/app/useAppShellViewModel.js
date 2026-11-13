@@ -1,7 +1,9 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
-import { useHealthStore } from "@/stores/health";
+import {
+  SESSION_TOKEN_STORAGE_KEY,
+  useHealthStore,
+} from "@/stores/health";
 
-const SESSION_TOKEN_STORAGE_KEY = "health-session-token";
 const LEGACY_ID_TOKEN_STORAGE_KEY = "health-google-id-token";
 
 /**
