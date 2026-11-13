@@ -24,6 +24,11 @@ export function sum(values) {
   return nums.reduce((total, v) => total + v, 0);
 }
 
+/** Trailing moving average: entry i averages values[max(0, i-windowSize+1)..i], ignoring nulls. */
+export function movingAverage(values, windowSize) {
+  return values.map((_, i) => average(values.slice(Math.max(0, i - windowSize + 1), i + 1)));
+}
+
 /** Rows whose date is within the last `days` days counting back from the latest row. */
 export function recentRows(rows, days) {
   if (!rows.length) {

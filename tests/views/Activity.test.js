@@ -34,7 +34,7 @@ describe("activity view", () => {
     expect(wrapper.text()).toContain("直近30日 平均活動時間");
     expect(wrapper.text()).not.toContain("記録日数");
     expect(wrapper.text()).not.toContain("平均活動回数");
-    expect(wrapper.text()).toContain("活動時間（直近30日）");
+    expect(wrapper.text()).toContain("睡眠時間（直近30日・7日移動平均）");
     const rows = wrapper.findAll("tbody tr");
     expect(rows).toHaveLength(2);
     expect(rows[0].text()).toContain("2026-11-12");
@@ -93,6 +93,10 @@ describe("activity view tabs and line chart", () => {
         { date: "2026-11-12", hour: 17, user_message_count: 24, engaged_minutes_est: 63 },
         { date: "2026-11-11", hour: 21, user_message_count: 26, engaged_minutes_est: 56 },
       ],
+      sleep_estimates: [
+        { date: "2026-11-11", sleep_start_est: "22:50", sleep_end_est: "01:37", duration_minutes_est: 166 },
+        { date: "2026-11-12", sleep_start_est: "22:29", sleep_end_est: "04:14", duration_minutes_est: 345 },
+      ],
     });
     store.source = "live";
     return mount(Activity, { global: { plugins: [pinia] } });
@@ -120,7 +124,7 @@ describe("activity view tabs and line chart", () => {
     expect(wrapper.find(".hour-nav-label").text()).toBe("合計");
   });
 
-  it("renders the daily minutes chart as a line chart", async () => {
+  it("renders the sleep moving-average chart as a line chart", async () => {
     const wrapper = mountWithDailyHours();
     await wrapper.vm.$nextTick();
     const lineChart = wrapper.find(".line-chart");
@@ -213,7 +217,7 @@ describe("activity view sleep card", () => {
     expect(wrapper.text()).toContain("直近30日 深夜帯の活動時間1時間");
   });
 
-  it("places the hourly chart above the daily usage chart", async () => {
+  it("places the hourly chart above the sleep chart", async () => {
     const pinia = createPinia();
     const store = useHealthStore(pinia);
     store.data = normalizeHealth({
@@ -227,6 +231,6 @@ describe("activity view sleep card", () => {
     await wrapper.vm.$nextTick();
     const text = wrapper.text();
     expect(text.indexOf("時間帯別の活動量")).toBeGreaterThanOrEqual(0);
-    expect(text.indexOf("時間帯別の活動量")).toBeLessThan(text.indexOf("活動時間（直近30日）"));
+    expect(text.indexOf("時間帯別の活動量")).toBeLessThan(text.indexOf("睡眠時間（直近30日・7日移動平均）"));
   });
 });
