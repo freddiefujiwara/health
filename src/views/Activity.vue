@@ -4,7 +4,7 @@ import { useHealthData } from "@/composables/useHealthData";
 import BarChart from "@/components/BarChart.vue";
 import LineChart from "@/components/LineChart.vue";
 import { formatDurationMinutes, formatInteger } from "@/domain/format";
-import { average, recentRows, sum } from "@/domain/stats";
+import { average, recentRows } from "@/domain/stats";
 
 const { data } = useHealthData();
 
@@ -69,9 +69,26 @@ const hourMetaText = computed(() => {
 });
 
 const sleep = computed(() => data.value?.sleepEstimates ?? []);
-const sleepAvg7Text = computed(() =>
-  formatDurationMinutes(average(sleep.value.slice(-7).map((r) => r.durationMinutesEst))),
-);
+const sleepAvgText = (days) =>
+  formatDurationMinutes(average(sleep.value.slice(-days).map((r) => r.durationMinutesEst)));
+
+// Late-night activity minutes per date, summed from the hourly breakdown
+// (hours 23 and 0-4 of the same calendar date, matching the window used
+// for the late-night counts: 23:00-04:29).
+const LATE_NIGHT_HOURS = [23, 0, 1, 2, 3, 4];
+const lateNightMinutesByDate = computed(() => {
+  const map = new Map();
+  for (const row of dailyHours.value) {
+    if (LATE_NIGHT_HOURS.includes(row.hour)) {
+      map.set(row.date, (map.get(row.date) ?? 0) + (row.engagedMinutesEst ?? 0));
+    }
+  }
+  return map;
+});
+const lateNightAvgText = (rows) =>
+  formatDurationMinutes(
+    average(rows.map((r) => lateNightMinutesByDate.value.get(r.date) ?? 0)),
+  );
 
 function timeToHours(t) {
   if (!t) {
@@ -121,12 +138,12 @@ const sleepBands = computed(() => {
 const hourBands = computed(() => sleepBands.value);
 
 const cards = computed(() => [
-  { label: "直近7日 平均使用時間", value: formatDurationMinutes(average(last7.value.map((r) => r.engagedMinutesEst))) },
-  { label: "直近30日 平均使用時間", value: formatDurationMinutes(average(last30.value.map((r) => r.engagedMinutesEst))) },
-  { label: "直近7日 平均推定睡眠", value: sleepAvg7Text.value },
-  { label: "直近7日 平均活動回数", value: `${formatInteger(average(last7.value.map((r) => r.userMessageCount)))} 回` },
-  { label: "直近7日 深夜帯の活動", value: `${formatInteger(sum(last7.value.map((r) => r.lateNightMessageCount)))} 回` },
-  { label: "記録日数", value: `${activity.value.length} 日` },
+  { label: "直近7日 平均活動時間", value: formatDurationMinutes(average(last7.value.map((r) => r.engagedMinutesEst))) },
+  { label: "直近30日 平均活動時間", value: formatDurationMinutes(average(last30.value.map((r) => r.engagedMinutesEst))) },
+  { label: "直近7日 平均睡眠時間", value: sleepAvgText(7) },
+  { label: "直近30日 平均睡眠時間", value: sleepAvgText(30) },
+  { label: "直近7日 深夜帯の活動時間", value: lateNightAvgText(last7.value) },
+  { label: "直近30日 深夜帯の活動時間", value: lateNightAvgText(last30.value) },
 ]);
 </script>
 
@@ -161,10 +178,10 @@ const cards = computed(() => [
     </section>
 
     <section class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">スマホ使用時間（直近30日）</h2>
+      <h2 class="section-title">活動時間（直近30日）</h2>
       <LineChart :points="points" unit="分" color="#0ea5e9" />
       <p class="meta">
-        使用時間は利用間隔の合計による推定です（間隔は最大20分で打ち切り）。自動配信分も含むため、目安としてご覧ください。深夜帯は23:00〜翌4:29です。
+        活動時間は利用間隔の合計による推定です（間隔は最大20分で打ち切り）。自動配信分も含むため、目安としてご覧ください。深夜帯は23:00〜翌4:29です。
       </p>
     </section>
 
@@ -172,12 +189,12 @@ const cards = computed(() => [
       <h2 class="section-title">日別</h2>
       <table class="stack-table">
         <thead>
-          <tr><th>日付</th><th>使用時間</th><th>活動回数</th><th>セッション</th><th>最初</th><th>最後</th><th>深夜帯</th></tr>
+          <tr><th>日付</th><th>活動時間</th><th>活動回数</th><th>セッション</th><th>最初</th><th>最後</th><th>深夜帯</th></tr>
         </thead>
         <tbody>
           <tr v-for="row in activityDesc" :key="row.date">
             <td data-label="日付">{{ row.date }}</td>
-            <td data-label="使用時間">{{ formatDurationMinutes(row.engagedMinutesEst) }}</td>
+            <td data-label="活動時間">{{ formatDurationMinutes(row.engagedMinutesEst) }}</td>
             <td data-label="活動回数">{{ formatInteger(row.userMessageCount) }} 回</td>
             <td data-label="セッション">{{ formatInteger(row.sessionCount) }}</td>
             <td data-label="最初">{{ row.firstMessageAt || "-" }}</td>
