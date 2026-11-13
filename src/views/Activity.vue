@@ -4,7 +4,7 @@ import { useHealthData } from "@/composables/useHealthData";
 import BarChart from "@/components/BarChart.vue";
 import LineChart from "@/components/LineChart.vue";
 import { formatDurationMinutes, formatInteger } from "@/domain/format";
-import { average, recentRows } from "@/domain/stats";
+import { average, movingAverage, recentRows } from "@/domain/stats";
 
 const { data } = useHealthData();
 
@@ -13,9 +13,19 @@ const activityDesc = computed(() => [...activity.value].reverse());
 const last30 = computed(() => recentRows(activity.value, 30));
 const last7 = computed(() => recentRows(activity.value, 7));
 
-const points = computed(() =>
-  last30.value.map((r) => ({ date: r.date, value: r.engagedMinutesEst })),
-);
+// Sleep chart: 7-day moving average of the estimated sleep duration,
+// over the last 30 wake dates.
+const points = computed(() => {
+  const averaged = movingAverage(
+    sleep.value.map((r) => r.durationMinutesEst),
+    7,
+  );
+  const rows = sleep.value.map((r, i) => ({
+    date: r.date,
+    value: averaged[i] === null ? null : Math.round(averaged[i]),
+  }));
+  return recentRows(rows, 30);
+});
 
 const hours = computed(() => data.value?.chatActivityHours ?? []);
 const dailyHours = computed(() => data.value?.chatActivityDailyHours ?? []);
@@ -178,10 +188,10 @@ const cards = computed(() => [
     </section>
 
     <section class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">活動時間（直近30日）</h2>
-      <LineChart :points="points" unit="分" color="#0ea5e9" />
+      <h2 class="section-title">睡眠時間（直近30日・7日移動平均）</h2>
+      <LineChart :points="points" unit="分" color="#8b5cf6" />
       <p class="meta">
-        活動時間は利用間隔の合計による推定です（間隔は最大20分で打ち切り）。自動配信分も含むため、目安としてご覧ください。深夜帯は23:00〜翌4:29です。
+        線は各日の推定睡眠時間を7日移動平均したものです。深夜帯は23:00〜翌4:29です。
       </p>
     </section>
 

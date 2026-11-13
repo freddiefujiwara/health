@@ -7,6 +7,7 @@ import {
   goalProgressPercent,
   goalReachDate,
   latestOf,
+  movingAverage,
   predictWeightKg,
   projectionPoints,
   recentRows,
@@ -15,6 +16,13 @@ import {
 } from "../../src/domain/stats";
 
 describe("stats helpers", () => {
+  it("movingAverage averages a trailing window and tolerates nulls", () => {
+    expect(movingAverage([60, 120, 180], 7)).toEqual([60, 90, 120]);
+    expect(movingAverage([10, 20, 30, 40], 2)).toEqual([10, 15, 25, 35]);
+    expect(movingAverage([null, 100], 7)).toEqual([null, 100]);
+    expect(movingAverage([], 7)).toEqual([]);
+  });
+
   it("picks first / latest rows", () => {
     expect(firstOf([])).toBeNull();
     expect(latestOf([])).toBeNull();
