@@ -7,6 +7,45 @@ const points = [
   { date: "2026-10-17", value: 91.5 },
 ];
 
+describe("line chart y axis", () => {
+  it("snaps the domain to the tick step and formats ticks as hours", () => {
+    const wrapper = mount(LineChart, {
+      props: {
+        points: [
+          { date: "2026-11-11", value: 245 },
+          { date: "2026-11-12", value: 305 },
+        ],
+        unit: "分",
+        yTickStep: 30,
+        yTickFormat: (v) => (v / 60).toFixed(1),
+      },
+    });
+    const texts = wrapper.findAll(".line-chart text").map((t) => t.text());
+    // domain snaps to [240, 330]: ticks 240/270/300/330 -> 4.0/4.5/5.0/5.5
+    expect(texts).toContain("4.0");
+    expect(texts).toContain("4.5");
+    expect(texts).toContain("5.0");
+    expect(texts).toContain("5.5");
+    expect(texts).not.toContain("240");
+  });
+
+  it("expands the domain when all values sit on one step", () => {
+    const wrapper = mount(LineChart, {
+      props: {
+        points: [
+          { date: "2026-11-11", value: 240 },
+          { date: "2026-11-12", value: 240 },
+        ],
+        yTickStep: 30,
+        yTickFormat: (v) => (v / 60).toFixed(1),
+      },
+    });
+    const texts = wrapper.findAll(".line-chart text").map((t) => t.text());
+    expect(texts).toContain("3.5");
+    expect(texts).toContain("4.5");
+  });
+});
+
 describe("line chart tooltip", () => {
   it("renders hit areas for each point and a hidden tooltip initially", () => {
     const wrapper = mount(LineChart, { props: { points, unit: " kg" } });

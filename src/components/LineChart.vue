@@ -16,6 +16,10 @@ const props = defineProps({
   // [{ text } | { mask }] — masked parts render as .privacy-mask spans (HTML overlay).
   goalLabelParts: { type: Array, default: null },
   height: { type: Number, default: 220 },
+  // When set, the y domain snaps to multiples of this step and ticks are
+  // placed on every step (e.g. 30 for half-hour ticks on a minutes axis).
+  yTickStep: { type: Number, default: null },
+  yTickFormat: { type: Function, default: null },
 });
 
 const root = ref(null);
@@ -88,11 +92,14 @@ function render() {
     .scaleTime()
     .domain(d3.extent(data.concat(validProjection.value), (d) => d.date))
     .range([margin.left, w - margin.right]);
-  const y = d3
-    .scaleLinear()
-    .domain([d3.min(values) * 0.98, d3.max(values) * 1.02])
-    .nice()
-    .range([h - margin.bottom, margin.top]);
+  const y = d3.scaleLinear().range([h - margin.bottom, margin.top]);
+  if (props.yTickStep) {
+    const lo = Math.floor(d3.min(values) / props.yTickStep) * props.yTickStep;
+    const hi = Math.ceil(d3.max(values) / props.yTickStep) * props.yTickStep;
+    y.domain(lo === hi ? [lo - props.yTickStep, hi + props.yTickStep] : [lo, hi]);
+  } else {
+    y.domain([d3.min(values) * 0.98, d3.max(values) * 1.02]).nice();
+  }
 
   svg
     .append("g")
@@ -109,11 +116,23 @@ function render() {
     )
     .selectAll("text")
     .attr("fill", "#94a3b8");
+  const yAxis = d3.axisLeft(y).ticks(5);
+  if (props.yTickStep) {
+    const [d0, d1] = y.domain();
+    const tickValues = [];
+    for (let v = d0; v <= d1; v += props.yTickStep) {
+      tickValues.push(v);
+    }
+    yAxis.tickValues(tickValues);
+  }
+  if (props.yTickFormat) {
+    yAxis.tickFormat(props.yTickFormat);
+  }
   svg
     .append("g")
     .attr("class", props.hideAxisInPrivate ? "chart-y-axis" : null)
     .attr("transform", `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y).ticks(5))
+    .call(yAxis)
     .selectAll("text")
     .attr("fill", "#94a3b8");
   svg.selectAll(".domain, .tick line").attr("stroke", "#334155");
