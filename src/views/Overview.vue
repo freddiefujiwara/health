@@ -12,6 +12,7 @@ import {
   goalReachDate,
   KCAL_PER_KG,
   latestOf,
+  predictedWeightSeries,
   predictWeightKg,
   projectionPoints,
   recentRows,
@@ -66,6 +67,9 @@ const empirical = computed(() =>
   empiricalKcalPerKg(tanita.value, data.value?.dailyNutrition ?? []),
 );
 const kcalPerKg = computed(() => empirical.value?.kcalPerKg ?? KCAL_PER_KG);
+const weightModel = computed(() =>
+  predictedWeightSeries(tanita.value, data.value?.dailyNutrition ?? [], kcalPerKg.value),
+);
 const projection = computed(() =>
   latest.value ? projectionPoints(latest.value, avgBalance30.value, 90, 15, kcalPerKg.value) : [],
 );
@@ -106,11 +110,15 @@ const predictionCards = computed(() => {
       <LineChart
         :points="weightPoints"
         :projection-points="projection"
+        :model-points="weightModel"
         hide-axis-in-private
         unit="kg"
         :goal-value="goals.finalGoalKg"
         :goal-label-parts="['最終目標 ', { mask: formatInteger(goals.finalGoalKg) }, 'kg']"
       />
+      <p v-if="weightModel.length > 1" class="meta" style="margin-top: 8px">
+        緑の点線は、日々のカロリー収支を実測換算で積み上げた予測体重です（食事記録の範囲内にある最初の実測を起点に、測定日ごとに実測と比較できます）。グレーの点線は直近30日の平均収支が続いた場合の今後の予測です。
+      </p>
       <p class="meta" style="margin-top: 8px">
         最終目標までの進捗
         <span class="amount-value is-public">{{ formatDecimal(finalProgress, 0) }}%</span>
