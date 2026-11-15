@@ -11,6 +11,8 @@ const props = defineProps({
   goalValue: { type: Number, default: null },
   projectionPoints: { type: Array, default: () => [] },
   projectionColor: { type: String, default: "#94a3b8" },
+  modelPoints: { type: Array, default: () => [] },
+  modelColor: { type: String, default: "#22c55e" },
   hideAxisInPrivate: { type: Boolean, default: false },
   goalLabel: { type: String, default: "" },
   // [{ text } | { mask }] — masked parts render as .privacy-mask spans (HTML overlay).
@@ -54,6 +56,12 @@ const validProjection = computed(() =>
     .map((p) => ({ date: new Date(`${p.date}T00:00:00`), value: p.value })),
 );
 
+const validModel = computed(() =>
+  props.modelPoints
+    .filter((p) => p.value !== null && p.value !== undefined)
+    .map((p) => ({ date: new Date(`${p.date}T00:00:00`), value: p.value })),
+);
+
 function render() {
   const el = root.value;
   if (!el) {
@@ -84,13 +92,16 @@ function render() {
     return;
   }
 
-  const values = data.map((d) => d.value).concat(validProjection.value.map((d) => d.value));
+  const values = data
+    .map((d) => d.value)
+    .concat(validProjection.value.map((d) => d.value))
+    .concat(validModel.value.map((d) => d.value));
   if (props.goalValue !== null) {
     values.push(props.goalValue);
   }
   const x = d3
     .scaleTime()
-    .domain(d3.extent(data.concat(validProjection.value), (d) => d.date))
+    .domain(d3.extent(data.concat(validProjection.value, validModel.value), (d) => d.date))
     .range([margin.left, w - margin.right]);
   const y = d3.scaleLinear().range([h - margin.bottom, margin.top]);
   if (props.yTickStep) {
@@ -172,6 +183,27 @@ function render() {
       .attr("stroke-dasharray", "6 4")
       .attr("d", line);
   }
+  if (validModel.value.length > 1) {
+    svg
+      .append("path")
+      .datum(validModel.value)
+      .attr("fill", "none")
+      .attr("stroke", props.modelColor)
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", "4 3")
+      .attr("d", line);
+    svg
+      .selectAll("circle.model-point")
+      .data(validModel.value)
+      .join("circle")
+      .attr("class", "model-point")
+      .attr("cx", (d) => x(d.date))
+      .attr("cy", (d) => y(d.value))
+      .attr("r", 3)
+      .attr("fill", "none")
+      .attr("stroke", props.modelColor)
+      .attr("stroke-width", 1.5);
+  }
 
   svg
     .selectAll("circle.point")
@@ -232,7 +264,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => [props.points, props.projectionPoints, props.goalValue, props.color],
+  () => [props.points, props.projectionPoints, props.modelPoints, props.goalValue, props.color],
   () => render(),
   { deep: true },
 );
