@@ -112,50 +112,6 @@ export function empiricalKcalPerKg(bodyRows, nutritionRows) {
   };
 }
 
-/**
- * Predicted weight at each body-composition measurement, built by piling
- * the recorded daily balances onto the first measurement that falls
- * inside the nutrition record. Lets the chart compare the balance-based
- * model against the actual measurements on the same dates. Returns []
- * when there is no measurement inside the record or no later one.
- */
-export function predictedWeightSeries(bodyRows, nutritionRows, kcalPerKg = KCAL_PER_KG) {
-  const completed = (nutritionRows ?? []).filter(
-    (row) => row && row.completeness === "完了" && Number.isFinite(row.balanceKcal),
-  );
-  if (!completed.length) {
-    return [];
-  }
-  const firstNutritionDate = completed.map((row) => date10(row.date)).sort()[0];
-  const anchors = (bodyRows ?? [])
-    .filter((row) => row && date10(row.date) >= firstNutritionDate && Number.isFinite(row.weightKg))
-    .map((row) => ({ date: date10(row.date), weightKg: row.weightKg }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-  if (anchors.length < 2) {
-    return [];
-  }
-  const anchor = anchors[0];
-  const sortedBalances = completed
-    .map((row) => ({ date: date10(row.date), balanceKcal: row.balanceKcal }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-  const points = [{ date: anchor.date, value: anchor.weightKg }];
-  let cumulative = 0;
-  let cursor = 0;
-  for (const measurement of anchors.slice(1)) {
-    while (cursor < sortedBalances.length && sortedBalances[cursor].date <= measurement.date) {
-      if (sortedBalances[cursor].date > anchor.date) {
-        cumulative += sortedBalances[cursor].balanceKcal;
-      }
-      cursor += 1;
-    }
-    points.push({
-      date: measurement.date,
-      value: Math.round((anchor.weightKg + cumulative / kcalPerKg) * 10) / 10,
-    });
-  }
-  return points;
-}
-
 export function addDays(dateStr, days) {
   const ms = Date.parse(dateStr) + days * 24 * 60 * 60 * 1000;
   return new Date(ms).toISOString().slice(0, 10);

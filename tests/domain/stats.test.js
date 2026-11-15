@@ -5,7 +5,6 @@ import {
   daysToGoalWeight,
   empiricalKcalPerKg,
   firstOf,
-  predictedWeightSeries,
   goalProgressPercent,
   goalReachDate,
   latestOf,
@@ -190,79 +189,5 @@ describe("empiricalKcalPerKg", () => {
     expect(empiricalKcalPerKg(undefined, undefined)).toBeNull();
     expect(empiricalKcalPerKg(null, nutrition)).toBeNull();
     expect(empiricalKcalPerKg(undefined, nutrition)).toBeNull();
-  });
-});
-
-describe("predictedWeightSeries", () => {
-  it("piles daily balances onto the first in-range measurement", () => {
-    const body = [
-      { date: "2026-09-26", weightKg: 93.5 },
-      { date: "2026-08-29", weightKg: 95.7 },
-      { date: "2026-09-01", weightKg: 95.0 },
-      { date: "2026-10-17", weightKg: 91.5 },
-    ];
-    const nutrition = [
-      { date: "2026-10-17", balanceKcal: -7700, completeness: "完了" },
-      { date: "2026-09-26", balanceKcal: -7700, completeness: "完了" },
-      { date: "2026-08-29", balanceKcal: -500, completeness: "完了" },
-      { date: "2026-08-23", balanceKcal: -936, completeness: "完了" },
-      { date: "2026-10-18", balanceKcal: -100, completeness: "途中（当日分）" },
-    ];
-    expect(predictedWeightSeries(body, nutrition)).toEqual([
-      { date: "2026-08-29", value: 95.7 },
-      { date: "2026-09-01", value: 95.7 },
-      { date: "2026-09-26", value: 94.7 },
-      { date: "2026-10-17", value: 93.7 },
-    ]);
-  });
-
-  it("uses the given kcal-per-kg factor", () => {
-    const body = [
-      { date: "2026-08-29", weightKg: 95.7 },
-      { date: "2026-10-17", weightKg: 91.5 },
-    ];
-    const nutrition = [
-      { date: "2026-08-23", balanceKcal: -936, completeness: "完了" },
-      { date: "2026-08-30", balanceKcal: -20000, completeness: "完了" },
-      { date: "2026-09-15T00:00:00+09:00", balanceKcal: -10000, completeness: "完了" },
-      { date: "2026-10-17", balanceKcal: -11950, completeness: "完了" },
-    ];
-    expect(predictedWeightSeries(body, nutrition, 9988)).toEqual([
-      { date: "2026-08-29", value: 95.7 },
-      { date: "2026-10-17", value: 91.5 },
-    ]);
-  });
-
-  it("returns [] when the series cannot be built", () => {
-    const body = [{ date: "2026-08-29", weightKg: 95.7 }];
-    const nutrition = [
-      { date: "2026-08-30", balanceKcal: -500, completeness: "完了" },
-    ];
-    expect(predictedWeightSeries(body, nutrition)).toEqual([]);
-    expect(predictedWeightSeries(body, [])).toEqual([]);
-    expect(predictedWeightSeries([], nutrition)).toEqual([]);
-    expect(predictedWeightSeries(null, null)).toEqual([]);
-    expect(predictedWeightSeries(undefined, nutrition)).toEqual([]);
-    expect(predictedWeightSeries(body, undefined)).toEqual([]);
-  });
-
-  it("tolerates messy rows", () => {
-    const body = [
-      null,
-      { weightKg: null },
-      { date: "2026-08-29", weightKg: null },
-      { date: "2026-08-29", weightKg: 95.7 },
-      { date: "2026-10-17", weightKg: 91.5 },
-    ];
-    const nutrition = [
-      null,
-      { balanceKcal: -100, completeness: "完了" },
-      { date: "2026-09-02", balanceKcal: NaN, completeness: "完了" },
-      { date: "2026-09-03", balanceKcal: -41950, completeness: "完了" },
-    ];
-    expect(predictedWeightSeries(body, nutrition, 9988)).toEqual([
-      { date: "2026-08-29", value: 95.7 },
-      { date: "2026-10-17", value: 91.5 },
-    ]);
   });
 });
