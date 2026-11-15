@@ -13,7 +13,7 @@ import {
   KCAL_PER_KG,
   latestOf,
   predictWeightKg,
-  projectionPoints,
+  weeklyBalanceProjection,
   recentRows,
   remainingToGoal,
 } from "@/domain/stats";
@@ -66,8 +66,13 @@ const empirical = computed(() =>
   empiricalKcalPerKg(tanita.value, data.value?.dailyNutrition ?? []),
 );
 const kcalPerKg = computed(() => empirical.value?.kcalPerKg ?? KCAL_PER_KG);
-const projection = computed(() =>
-  latest.value ? projectionPoints(latest.value, avgBalance30.value, 91, 7, kcalPerKg.value) : [],
+const weeklyProjection = computed(() =>
+  weeklyBalanceProjection(
+    latest.value,
+    data.value?.dailyNutrition ?? [],
+    avgBalance30.value,
+    kcalPerKg.value,
+  ),
 );
 const predictionCards = computed(() => {
   if (!latest.value) {
@@ -105,14 +110,15 @@ const predictionCards = computed(() => {
       <h2 class="section-title">体重の推移</h2>
       <LineChart
         :points="weightPoints"
-        :model-points="projection"
+        :model-points="weeklyProjection.dataPoints"
+        :projection-points="weeklyProjection.forecastPoints"
         hide-axis-in-private
         unit="kg"
         :goal-value="goals.finalGoalKg"
         :goal-label-parts="['最終目標 ', { mask: formatInteger(goals.finalGoalKg) }, 'kg']"
       />
-      <p v-if="projection.length > 1" class="meta" style="margin-top: 8px">
-        緑の点線は、最新の実測を起点に、直近30日（完了日）の平均収支が続くと仮定して1週間ごとにプロットした予測体重です（実測換算で計算）。
+      <p v-if="weeklyProjection.dataPoints.length > 1" class="meta" style="margin-top: 8px">
+        緑の点線は、最新の実測を起点に、日々のカロリー収支の実績を1週間ごとに積み上げた予測体重です（実測換算で計算）。グレーの点線は、収支データがない期間を直近30日（完了日）の平均収支が続くと仮定して伸ばした予測です。
       </p>
       <p class="meta" style="margin-top: 8px">
         最終目標までの進捗
