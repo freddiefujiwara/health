@@ -112,6 +112,71 @@ export function empiricalKcalPerKg(bodyRows, nutritionRows) {
   };
 }
 
+/**
+ * Weekly predicted-weight points from the latest measurement.
+ * `dataPoints` pile up the recorded daily balances week by week, so the
+ * line follows the actual intake/expenditure rhythm. Once the recorded
+ * (completed) days run out, `forecastPoints` continue from the last data
+ * point at a constant average daily balance — the stretch with no data.
+ */
+export function weeklyBalanceProjection(
+  latest,
+  nutritionRows,
+  avgDailyBalanceKcal,
+  kcalPerKg = KCAL_PER_KG,
+  horizonDays = 91,
+  stepDays = 7,
+) {
+  if (!latest) {
+    return { dataPoints: [], forecastPoints: [] };
+  }
+  const anchor = { date: date10(latest.date), value: latest.weightKg };
+  const completed = (nutritionRows ?? [])
+    .filter(
+      (row) => row && row.completeness === "完了" && Number.isFinite(row.balanceKcal),
+    )
+    .map((row) => ({ date: date10(row.date), balanceKcal: row.balanceKcal }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  const lastCompletedDate = completed.length
+    ? completed[completed.length - 1].date
+    : null;
+
+  const dataPoints = [anchor];
+  let cumulative = 0;
+  let cursor = 0;
+  let lastStep = 0;
+  for (let d = stepDays; d <= horizonDays; d += stepDays) {
+    const stepDate = addDays(anchor.date, d);
+    if (lastCompletedDate === null || stepDate > lastCompletedDate) {
+      break;
+    }
+    while (cursor < completed.length && completed[cursor].date <= stepDate) {
+      if (completed[cursor].date > anchor.date) {
+        cumulative += completed[cursor].balanceKcal;
+      }
+      cursor += 1;
+    }
+    dataPoints.push({
+      date: stepDate,
+      value: anchor.value + cumulative / kcalPerKg,
+    });
+    lastStep = d;
+  }
+
+  const forecastPoints = [];
+  if (avgDailyBalanceKcal !== null && avgDailyBalanceKcal !== undefined) {
+    const lastData = dataPoints[dataPoints.length - 1];
+    forecastPoints.push(lastData);
+    for (let d = lastStep + stepDays; d <= horizonDays; d += stepDays) {
+      forecastPoints.push({
+        date: addDays(anchor.date, d),
+        value: lastData.value + (avgDailyBalanceKcal * (d - lastStep)) / kcalPerKg,
+      });
+    }
+  }
+  return { dataPoints, forecastPoints };
+}
+
 export function addDays(dateStr, days) {
   const ms = Date.parse(dateStr) + days * 24 * 60 * 60 * 1000;
   return new Date(ms).toISOString().slice(0, 10);

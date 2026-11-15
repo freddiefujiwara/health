@@ -14,6 +14,7 @@ import {
   recentRows,
   remainingToGoal,
   sum,
+  weeklyBalanceProjection,
 } from "../../src/domain/stats";
 
 describe("stats helpers", () => {
@@ -189,5 +190,99 @@ describe("empiricalKcalPerKg", () => {
     expect(empiricalKcalPerKg(undefined, undefined)).toBeNull();
     expect(empiricalKcalPerKg(null, nutrition)).toBeNull();
     expect(empiricalKcalPerKg(undefined, nutrition)).toBeNull();
+  });
+});
+
+describe("weeklyBalanceProjection", () => {
+  const latest = { date: "2026-10-17", weightKg: 100 };
+  const nutrition = [
+    { date: "2026-11-14", balanceKcal: -1500, completeness: "完了" },
+    { date: "2026-10-17", balanceKcal: -5000, completeness: "完了" },
+    { date: "2026-10-20", balanceKcal: -3000, completeness: "完了" },
+    { date: "2026-10-24", balanceKcal: -4000, completeness: "完了" },
+    { date: "2026-10-31", balanceKcal: -3500, completeness: "完了" },
+    { date: "2026-11-05", balanceKcal: -2000, completeness: "完了" },
+    { date: "2026-11-15", balanceKcal: -999, completeness: "途中（当日分）" },
+  ];
+  const rounded = (points) =>
+    points.map((p) => ({ date: p.date, value: Math.round(p.value * 100) / 100 }));
+
+  it("piles up actual weekly balances, then forecasts the no-data stretch in grey", () => {
+    const { dataPoints, forecastPoints } = weeklyBalanceProjection(latest, nutrition, -500, 10000);
+    expect(rounded(dataPoints)).toEqual([
+      { date: "2026-10-17", value: 100 },
+      { date: "2026-10-24", value: 99.3 },
+      { date: "2026-10-31", value: 98.95 },
+      { date: "2026-11-07", value: 98.75 },
+      { date: "2026-11-14", value: 98.6 },
+    ]);
+    expect(rounded(forecastPoints)).toEqual([
+      { date: "2026-11-14", value: 98.6 },
+      { date: "2026-11-21", value: 98.25 },
+      { date: "2026-11-28", value: 97.9 },
+      { date: "2026-12-05", value: 97.55 },
+      { date: "2026-12-12", value: 97.2 },
+      { date: "2026-12-19", value: 96.85 },
+      { date: "2026-12-26", value: 96.5 },
+      { date: "2027-01-02", value: 96.15 },
+      { date: "2027-01-09", value: 95.8 },
+      { date: "2027-01-16", value: 95.45 },
+    ]);
+  });
+
+  it("returns empty series without a latest measurement", () => {
+    expect(weeklyBalanceProjection(null, nutrition, -500, 10000)).toEqual({
+      dataPoints: [],
+      forecastPoints: [],
+    });
+  });
+
+  it("forecasts from the anchor when there is no recorded balance after it", () => {
+    const before = [
+      { date: "2026-10-10", balanceKcal: -800, completeness: "完了" },
+    ];
+    const { dataPoints, forecastPoints } = weeklyBalanceProjection(latest, before, -500, 10000);
+    expect(dataPoints).toEqual([{ date: "2026-10-17", value: 100 }]);
+    expect(forecastPoints).toHaveLength(14);
+    expect(forecastPoints[0]).toEqual({ date: "2026-10-17", value: 100 });
+    const empty = weeklyBalanceProjection(latest, [], -500, 10000);
+    expect(empty.dataPoints).toEqual([{ date: "2026-10-17", value: 100 }]);
+    expect(empty.forecastPoints).toHaveLength(14);
+    const nullRows = weeklyBalanceProjection(latest, null, -500, 10000);
+    expect(nullRows.forecastPoints).toHaveLength(14);
+  });
+
+  it("omits the forecast when the average balance is unknown", () => {
+    expect(weeklyBalanceProjection(latest, nutrition, null, 10000).forecastPoints).toEqual([]);
+    expect(weeklyBalanceProjection(latest, nutrition, undefined, 10000).forecastPoints).toEqual([]);
+  });
+
+  it("keeps every step green when data covers the whole horizon", () => {
+    const full = [
+      { date: "2027-03-01", balanceKcal: -7000, completeness: "完了" },
+    ];
+    const { dataPoints, forecastPoints } = weeklyBalanceProjection(latest, full, -500, 10000);
+    expect(dataPoints).toHaveLength(14);
+    expect(forecastPoints).toHaveLength(1);
+  });
+
+  it("uses the default 7,700 kcal/kg factor when none is given", () => {
+    const { dataPoints } = weeklyBalanceProjection(latest, nutrition, -500);
+    expect(dataPoints[1].value).toBeCloseTo(100 - 7000 / 7700);
+  });
+
+  it("tolerates messy rows", () => {
+    const messy = [
+      null,
+      { balanceKcal: -100, completeness: "完了" },
+      { date: "2026-10-20", balanceKcal: NaN, completeness: "完了" },
+      { date: "2026-10-24T00:00:00+09:00", balanceKcal: -7000, completeness: "完了" },
+    ];
+    const { dataPoints, forecastPoints } = weeklyBalanceProjection(latest, messy, -500, 10000);
+    expect(rounded(dataPoints)).toEqual([
+      { date: "2026-10-17", value: 100 },
+      { date: "2026-10-24", value: 99.3 },
+    ]);
+    expect(forecastPoints[0]).toEqual(dataPoints[dataPoints.length - 1]);
   });
 });
