@@ -151,4 +151,43 @@ describe("empiricalKcalPerKg", () => {
     const surplus = nutrition.map((row) => ({ ...row, balanceKcal: 100 }));
     expect(empiricalKcalPerKg(body, surplus)).toBeNull();
   });
+
+  it("returns null when both measurements share one date", () => {
+    const sameDay = [
+      { date: "2026-08-29", weightKg: 95.7 },
+      { date: "2026-08-29", weightKg: 95.0 },
+    ];
+    expect(empiricalKcalPerKg(sameDay, nutrition)).toBeNull();
+  });
+
+  it("returns null when no completed day falls inside the span", () => {
+    const outside = [
+      { date: "2026-08-23", balanceKcal: -936, completeness: "完了" },
+      { date: "2026-12-01", balanceKcal: -500, completeness: "完了" },
+    ];
+    expect(empiricalKcalPerKg(body, outside)).toBeNull();
+  });
+
+  it("tolerates messy rows and unsorted input", () => {
+    const messyBody = [
+      null,
+      { date: "2026-10-17", weightKg: 91.5 },
+      { date: "2026-08-29", weightKg: null },
+      { date: "2026-08-29", weightKg: 95.7 },
+    ];
+    const messyNutrition = [
+      null,
+      { balanceKcal: -100, completeness: "完了" },
+      { date: "2026-09-01", balanceKcal: NaN, completeness: "完了" },
+      { date: "2026-09-02", balanceKcal: -41950, completeness: "完了" },
+    ];
+    const result = empiricalKcalPerKg(messyBody, messyNutrition);
+    expect(result.kcalPerKg).toBe(9988);
+    const dateless = empiricalKcalPerKg([...body, { weightKg: 50 }], nutrition);
+    expect(dateless.kcalPerKg).toBe(9988);
+    expect(empiricalKcalPerKg(null, null)).toBeNull();
+    expect(empiricalKcalPerKg(undefined, undefined)).toBeNull();
+    expect(empiricalKcalPerKg(null, nutrition)).toBeNull();
+    expect(empiricalKcalPerKg(undefined, nutrition)).toBeNull();
+  });
 });
