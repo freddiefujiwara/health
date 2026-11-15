@@ -6,9 +6,11 @@ import ShareSessionCard from "@/components/ShareSessionCard.vue";
 import { formatDecimal, formatInteger, formatKg, formatPercentChange } from "@/domain/format";
 import {
   average,
+  empiricalKcalPerKg,
   firstOf,
   goalProgressPercent,
   goalReachDate,
+  KCAL_PER_KG,
   latestOf,
   predictWeightKg,
   projectionPoints,
@@ -60,19 +62,28 @@ const completedNutrition = computed(() =>
 const avgBalance30 = computed(() =>
   average(recentRows(completedNutrition.value, 30).map((row) => row.balanceKcal)),
 );
+const empirical = computed(() =>
+  empiricalKcalPerKg(tanita.value, data.value?.dailyNutrition ?? []),
+);
+const kcalPerKg = computed(() => empirical.value?.kcalPerKg ?? KCAL_PER_KG);
 const projection = computed(() =>
-  latest.value ? projectionPoints(latest.value, avgBalance30.value, 90, 15) : [],
+  latest.value ? projectionPoints(latest.value, avgBalance30.value, 90, 15, kcalPerKg.value) : [],
 );
 const predictionCards = computed(() => {
   if (!latest.value) {
     return [];
   }
   const l = latest.value;
-  const interimDate = goalReachDate(l.date, l.weightKg, goals.value.interimGoalKg, avgBalance30.value);
-  const finalDate = goalReachDate(l.date, l.weightKg, goals.value.finalGoalKg, avgBalance30.value);
+  const interimDate = goalReachDate(l.date, l.weightKg, goals.value.interimGoalKg, avgBalance30.value, kcalPerKg.value);
+  const finalDate = goalReachDate(l.date, l.weightKg, goals.value.finalGoalKg, avgBalance30.value, kcalPerKg.value);
   return [
     { label: "直近30日 平均収支（完了日のみ）", value: `${formatInteger(avgBalance30.value)} kcal/日`, public: true },
-    { label: "30日後の予測体重", value: formatKg(predictWeightKg(l.weightKg, avgBalance30.value, 30)), public: false },
+    {
+      label: "実測換算（体重 1 kg あたり）",
+      value: empirical.value ? `${formatInteger(empirical.value.kcalPerKg)} kcal` : "算出に必要なデータ不足",
+      public: true,
+    },
+    { label: "30日後の予測体重", value: formatKg(predictWeightKg(l.weightKg, avgBalance30.value, 30, kcalPerKg.value)), public: false },
     { labelParts: ["中間目標 ", { mask: formatInteger(goals.value.interimGoalKg) }, " kg 到達予測"], value: interimDate ?? "現在の収支では未達", public: true },
     { labelParts: ["最終目標 ", { mask: formatInteger(goals.value.finalGoalKg) }, " kg 到達予測"], value: finalDate ?? "現在の収支では未達", public: true },
   ];
@@ -117,7 +128,10 @@ const predictionCards = computed(() => {
           <p :class="card.public ? 'amount-value is-public' : 'amount-value'">{{ card.value }}</p>
         </section>
       </div>
-      <p class="meta" style="margin-top: 8px">
+      <p v-if="empirical" class="meta" style="margin-top: 8px">
+        直近30日（完了日）の平均収支が続くと仮定し、実測の換算（1 kg ≒ {{ formatInteger(empirical.kcalPerKg) }} kcal）で推計した単純推計です。換算値は {{ empirical.fromDate }}〜{{ empirical.toDate }} の収支累計 {{ formatInteger(empirical.totalBalanceKcal) }} kcal と体重変化から算出しています。水分や筋肉量の変化は含みません。
+      </p>
+      <p v-else class="meta" style="margin-top: 8px">
         直近30日（完了日）の平均収支が続くと仮定し、7,700 kcal ≒ 1 kg で換算した単純推計です。水分や筋肉量の変化は含みません。
       </p>
     </section>
