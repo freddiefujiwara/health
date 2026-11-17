@@ -50,7 +50,45 @@ describe("app shell", () => {
     await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain("Googleログインが必要です");
     expect(wrapper.text()).toContain("許可されたアカウントでサインインしてください");
-    expect(wrapper.text()).toContain("認証エラーが発生しました");
+    expect(wrapper.text()).toContain("ログインに失敗しました。もう一度お試しください。");
+    expect(wrapper.text()).not.toContain("AUTH");
+    expect(wrapper.text()).not.toContain("view-body");
+  });
+
+  it("shows the not-allowed message when the API rejects the account", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ status: 403, error: "forbidden email" }),
+    })));
+    const { wrapper } = buildWrapper();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("Googleログインが必要です");
+    expect(wrapper.text()).toContain("このアカウントでは利用できません。");
+    expect(wrapper.text()).not.toContain("AUTH");
+    expect(wrapper.text()).not.toContain("view-body");
+  });
+
+  it("shows the expired message when the saved session has expired", async () => {
+    localStorage.setItem("health-session-token", "stale-token");
+    let calls = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      calls += 1;
+      return {
+        ok: true,
+        json: async () => (calls === 1
+          ? { status: 401, error: "session expired or invalid" }
+          : { status: 401, error: "missing id token" }),
+      };
+    }));
+    const { wrapper } = buildWrapper();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("Googleログインが必要です");
+    expect(wrapper.text()).toContain("ログインの有効期限が切れました。再度ログインしてください。");
+    expect(wrapper.text()).not.toContain("AUTH");
     expect(wrapper.text()).not.toContain("view-body");
   });
 
@@ -89,7 +127,9 @@ describe("app shell", () => {
     const { wrapper } = buildWrapper();
     await flushPromises();
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("閲覧用リンクの有効期限が切れています");
+    expect(wrapper.text()).toContain("リンクの有効期限が切れています");
+    expect(wrapper.text()).toContain("この一時アクセスリンクは無効か、期限切れです。発行者に新しいリンクを依頼してください。");
+    expect(wrapper.text()).not.toContain("AUTH");
     expect(wrapper.text()).not.toContain("Googleログインが必要です");
     expect(wrapper.text()).not.toContain("view-body");
   });

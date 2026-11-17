@@ -77,7 +77,7 @@ function displayValue(row) {
       </table>
     </section>
   </div>
-  <p v-else class="meta">読み込み中です。</p>
+  <p v-else class="meta">読み込み中…</p>
 </template>
 
 <style scoped>
