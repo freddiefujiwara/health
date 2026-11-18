@@ -1,7 +1,9 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import * as d3 from "d3";
 import { formatChartValue } from "@/domain/format";
+import ChartTooltip from "@/components/ChartTooltip.vue";
+import { useChartResize } from "@/composables/useChartResize";
 
 const props = defineProps({
   // [{ date: 'YYYY-MM-DD', value: number|null }]
@@ -24,11 +26,8 @@ const props = defineProps({
   yTickFormat: { type: Function, default: null },
 });
 
-const root = ref(null);
-const width = ref(320);
 const tooltip = ref(null);
 const goalLabelPos = ref(null);
-let resizeObserver = null;
 
 function showTooltip(datum, cx, cy) {
   tooltip.value = {
@@ -246,22 +245,7 @@ function render() {
   });
 }
 
-onMounted(() => {
-  if (typeof ResizeObserver !== "undefined") {
-    resizeObserver = new ResizeObserver((entries) => {
-      width.value = entries[0].contentRect.width;
-      render();
-    });
-    if (root.value) {
-      resizeObserver.observe(root.value);
-    }
-  }
-  render();
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-});
+const { root, width } = useChartResize(render);
 
 watch(
   () => [props.points, props.projectionPoints, props.modelPoints, props.goalValue, props.color],
@@ -283,15 +267,7 @@ watch(
       </template>
       <template v-else>{{ goalLabel }}</template>
     </div>
-    <div
-      v-if="tooltip"
-      class="chart-tooltip"
-      :class="{ below: tooltip.below }"
-      :style="{ left: `${tooltip.left}px`, top: `${tooltip.top}px` }"
-    >
-      <span class="tt-date">{{ tooltip.dateText }}</span>
-      <span class="tt-value" :class="{ 'amount-value': hideAxisInPrivate }">{{ tooltip.valueText }}</span>
-    </div>
+    <ChartTooltip :tooltip="tooltip" :mask-value="hideAxisInPrivate" />
   </div>
 </template>
 
@@ -304,25 +280,6 @@ watch(
   width: 100%;
 }
 
-.chart-tooltip {
-  position: absolute;
-  transform: translate(-50%, calc(-100% - 12px));
-  background: var(--surface-elevated, #1e293b);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 5;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-}
-
-.chart-tooltip.below {
-  transform: translate(-50%, 14px);
-}
 
 .goal-label {
   position: absolute;
@@ -331,16 +288,5 @@ watch(
   font-size: 11px;
   white-space: nowrap;
   pointer-events: none;
-}
-
-.tt-date {
-  display: block;
-  color: var(--muted, #94a3b8);
-}
-
-.tt-value {
-  display: block;
-  font-weight: 700;
-  font-size: 13px;
 }
 </style>
