@@ -39,11 +39,30 @@ export const FEATURED_LAB_ITEMS = [
   "グルコース",
 ];
 
+/**
+ * Blood pressure is charted as a pair: systolic as the main series and
+ * diastolic as the sub series. Needs at least two systolic points.
+ */
+export function bloodPressureEntry(rows) {
+  const points = labItemSeries(rows, "最高血圧");
+  if (points.length < 2) {
+    return null;
+  }
+  return {
+    item: "血圧",
+    unit: "mmHg",
+    points,
+    subPoints: labItemSeries(rows, "最低血圧"),
+  };
+}
+
 /** Chart-ready series for the featured items that have at least two numeric points. */
 export function featuredLabSeries(rows) {
-  return FEATURED_LAB_ITEMS.map((item) => ({
+  const entries = FEATURED_LAB_ITEMS.map((item) => ({
     item,
     unit: labItemUnit(rows, item),
     points: labItemSeries(rows, item),
   })).filter((entry) => entry.points.length >= 2);
+  const bloodPressure = bloodPressureEntry(rows);
+  return bloodPressure ? [bloodPressure, ...entries] : entries;
 }
