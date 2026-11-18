@@ -46,7 +46,12 @@ function displayValue(row) {
         :points="activeEntry.points"
         :unit="activeEntry.unit"
         color="#0ea5e9"
+        :model-points="activeEntry.subPoints ?? []"
+        model-color="#f59e0b"
       />
+      <p v-if="activeEntry?.subPoints" class="meta" style="margin-top: 8px">
+        実線が最高血圧、破線が最低血圧です。
+      </p>
     </section>
 
     <section v-for="group in groups" :key="group.date" class="table-wrap">

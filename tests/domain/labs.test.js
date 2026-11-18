@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { featuredLabSeries, groupLabResults, labItemSeries, labItemUnit } from "../../src/domain/labs";
+import { bloodPressureEntry, featuredLabSeries, groupLabResults, labItemSeries, labItemUnit } from "../../src/domain/labs";
 
 const rows = [
   { date: "2026-08-20", panel: "血液検査", item: "γ-GTP", value: 178, valueNumber: 178, unit: "IU/L" },
@@ -60,5 +60,38 @@ describe("featured lab items", () => {
 
   it("returns an empty list when nothing matches", () => {
     expect(featuredLabSeries([])).toEqual([]);
+  });
+});
+
+describe("blood pressure entry", () => {
+  const bpRows = [
+    { date: "2026-06-26", panel: "健康診断", item: "最高血圧", value: 151, valueNumber: 151, unit: "mmHg" },
+    { date: "2026-06-26", panel: "健康診断", item: "最低血圧", value: 101, valueNumber: 101, unit: "mmHg" },
+    { date: "2026-11-19", panel: "血圧測定", item: "最高血圧", value: 138, valueNumber: 138, unit: "mmHg" },
+    { date: "2026-11-19", panel: "血圧測定", item: "最低血圧", value: 91, valueNumber: 91, unit: "mmHg" },
+  ];
+
+  it("pairs systolic points with diastolic sub points", () => {
+    const entry = bloodPressureEntry(bpRows);
+    expect(entry.item).toBe("血圧");
+    expect(entry.unit).toBe("mmHg");
+    expect(entry.points).toEqual([
+      { date: "2026-06-26", value: 151 },
+      { date: "2026-11-19", value: 138 },
+    ]);
+    expect(entry.subPoints).toEqual([
+      { date: "2026-06-26", value: 101 },
+      { date: "2026-11-19", value: 91 },
+    ]);
+  });
+
+  it("returns null with fewer than two systolic points", () => {
+    expect(bloodPressureEntry([])).toBeNull();
+    expect(bloodPressureEntry(bpRows.slice(0, 2))).toBeNull();
+  });
+
+  it("puts blood pressure first in the featured list", () => {
+    const featured = featuredLabSeries([...rows, ...bpRows]);
+    expect(featured.map((f) => f.item)).toEqual(["血圧", "γ-GTP", "AST"]);
   });
 });
