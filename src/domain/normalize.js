@@ -171,7 +171,7 @@ function normalizeSleepEstimates(rows) {
       sleepEndEst: row.sleep_end_est ?? null,
       durationMinutesEst: toNumber(row.duration_minutes_est),
     }))
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    .sort(byDateAsc);
 }
 
 function normalizeGoals(rows) {

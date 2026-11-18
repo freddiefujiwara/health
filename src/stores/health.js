@@ -89,28 +89,31 @@ function getShareToken() {
   return globalThis.sessionStorage?.getItem(SHARE_TOKEN_STORAGE_KEY) ?? "";
 }
 
-function buildApiUrlWithSession(sessionToken) {
+/** API URL with the given query parameters (empty values are omitted). */
+function buildApiUrl(params) {
   const url = new URL(HEALTH_API_URL);
-  url.searchParams.set("session_token", sessionToken);
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      url.searchParams.set(key, value);
+    }
+  }
   return url.toString();
 }
 
-function buildApiUrlWithShare(shareToken) {
-  const url = new URL(HEALTH_API_URL);
-  url.searchParams.set("share_token", shareToken);
-  return url.toString();
+/** Call an API action and return its JSON body (throws on HTTP errors). */
+async function fetchActionJson(action, params = {}) {
+  const response = await fetch(buildApiUrl({ action, ...params }));
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
 }
 
-function buildActionUrl(action, { idToken = "", sessionToken = "" } = {}) {
-  const url = new URL(HEALTH_API_URL);
-  url.searchParams.set("action", action);
-  if (idToken) {
-    url.searchParams.set("id_token", idToken);
-  }
-  if (sessionToken) {
-    url.searchParams.set("session_token", sessionToken);
-  }
-  return url.toString();
+/** "AUTH <status>: <message>" for an auth-failure body, else null. */
+function authErrorOf(json) {
+  return json && (json.status === 401 || json.status === 403)
+    ? `AUTH ${json.status}: ${json.error ?? "unauthorized"}`
+    : null;
 }
 
 export const useHealthStore = defineStore("health", {
@@ -138,11 +141,7 @@ export const useHealthStore = defineStore("health", {
       const shareToken = sessionToken ? "" : getShareToken();
       this.shareMode = Boolean(shareToken);
       this.hasSession = Boolean(sessionToken);
-      const apiUrl = sessionToken
-        ? buildApiUrlWithSession(sessionToken)
-        : shareToken
-          ? buildApiUrlWithShare(shareToken)
-          : HEALTH_API_URL;
+      const apiUrl = buildApiUrl({ session_token: sessionToken, share_token: shareToken });
       const cacheMode = sessionToken ? "session" : shareToken ? "share" : "google";
       const cached = readPayloadCache(cacheMode);
       if (cached) {
@@ -159,32 +158,29 @@ export const useHealthStore = defineStore("health", {
         this.loading = false;
       }
       try {
-        while (true) {
-          const response = await fetch(apiUrl);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-
-          const json = await response.json();
-          if (json && (json.status === 401 || json.status === 403)) {
-            const authMessage = json.error ?? "unauthorized";
-            if (sessionToken && authMessage === "session expired or invalid") {
-              // The stored owner session is gone or expired; drop it so
-              // the shell returns to the Google sign-in gate.
-              setSessionToken("");
-              this.hasSession = false;
-            }
-
-            throw new Error(`AUTH ${json.status}: ${authMessage}`);
-          }
-
-          this.rawResponse = json;
-          this.shareExpiresAt = json?._share?.expires_at ?? "";
-          this.data = normalizeHealth(json);
-          this.source = "live";
-          writePayloadCache(cacheMode, json);
-          break;
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
+
+        const json = await response.json();
+        const authError = authErrorOf(json);
+        if (authError) {
+          if (sessionToken && json.error === "session expired or invalid") {
+            // The stored owner session is gone or expired; drop it so
+            // the shell returns to the Google sign-in gate.
+            setSessionToken("");
+            this.hasSession = false;
+          }
+
+          throw new Error(authError);
+        }
+
+        this.rawResponse = json;
+        this.shareExpiresAt = json?._share?.expires_at ?? "";
+        this.data = normalizeHealth(json);
+        this.source = "live";
+        writePayloadCache(cacheMode, json);
       } catch (error) {
         const message = error?.message ?? "unknown error";
         if (message.startsWith("AUTH ")) {
@@ -236,13 +232,10 @@ export const useHealthStore = defineStore("health", {
     // rejected (the error is surfaced via this.error like other AUTH
     // failures).
     async exchangeSession(idToken) {
-      const response = await fetch(buildActionUrl("exchange_session", { idToken }));
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const json = await response.json();
-      if (json && (json.status === 401 || json.status === 403)) {
-        this.error = `AUTH ${json.status}: ${json.error ?? "unauthorized"}`;
+      const json = await fetchActionJson("exchange_session", { id_token: idToken });
+      const authError = authErrorOf(json);
+      if (authError) {
+        this.error = authError;
         return "";
       }
       if (!json?.session_token) {
@@ -264,37 +257,27 @@ export const useHealthStore = defineStore("health", {
         return;
       }
       try {
-        await fetch(buildActionUrl("revoke_session", { sessionToken }));
+        await fetch(buildApiUrl({ action: "revoke_session", session_token: sessionToken }));
       } catch {
         // Logout must not fail on a network error.
       }
     },
 
     async issueShare() {
-      const response = await fetch(
-        buildActionUrl("issue_share", { sessionToken: getSessionToken() }),
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const json = await response.json();
-      if (json && (json.status === 401 || json.status === 403)) {
-        throw new Error(`AUTH ${json.status}: ${json.error ?? "unauthorized"}`);
+      const json = await fetchActionJson("issue_share", { session_token: getSessionToken() });
+      const authError = authErrorOf(json);
+      if (authError) {
+        throw new Error(authError);
       }
       this.issuedShare = { token: json.share_token, expiresAt: json.expires_at };
       return this.issuedShare;
     },
 
     async revokeShare() {
-      const response = await fetch(
-        buildActionUrl("revoke_share", { sessionToken: getSessionToken() }),
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const json = await response.json();
-      if (json && (json.status === 401 || json.status === 403)) {
-        throw new Error(`AUTH ${json.status}: ${json.error ?? "unauthorized"}`);
+      const json = await fetchActionJson("revoke_share", { session_token: getSessionToken() });
+      const authError = authErrorOf(json);
+      if (authError) {
+        throw new Error(authError);
       }
       this.issuedShare = null;
     },
