@@ -196,6 +196,41 @@ describe("activity view tabs and line chart", () => {
     expect(bandLabels).toHaveLength(1);
     expect(bandLabels[0].text()).toBe("5時間45分");
   });
+
+  it("draws an interval that ends before midnight on the previous evening only", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    const dailyHours = [];
+    for (const date of ["2026-11-12", "2026-11-13"]) {
+      for (let h = 0; h < 24; h += 1) {
+        dailyHours.push({ date, hour: h, user_message_count: h === 5 ? 10 : 0, engaged_minutes_est: 0 });
+      }
+    }
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_hours: [
+        { hour: 5, user_message_count: 426, engaged_minutes_est: 742 },
+      ],
+      chat_activity_daily_hours: dailyHours,
+      sleep_estimates: [
+        { date: "2026-11-13", sleep_start_est: "21:09", sleep_end_est: "23:47", duration_minutes_est: 157 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    // Wake date (11/13): the 21:09-23:47 interval happened on the
+    // previous evening, so no band and no note on this day.
+    await wrapper.find('button[aria-label="前の日"]').trigger("click");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/13（金）");
+    expect(wrapper.findAll("rect.band")).toHaveLength(0);
+    expect(wrapper.text()).not.toContain("紫の帯は推定睡眠として数えた区間です");
+    // Previous evening (11/12): the band sits at 21:09-23:47.
+    await wrapper.find('button[aria-label="前の日"]').trigger("click");
+    expect(wrapper.find(".hour-nav-label").text()).toBe("2026/11/12（木）");
+    expect(wrapper.findAll("rect.band")).toHaveLength(1);
+    expect(wrapper.text()).toContain("紫の帯は推定睡眠として数えた区間です（21:09–23:47、2時間37分）");
+  });
 });
 
 
