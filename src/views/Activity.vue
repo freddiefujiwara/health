@@ -5,6 +5,7 @@ import BarChart from "@/components/BarChart.vue";
 import LineChart from "@/components/LineChart.vue";
 import { formatDateWithWeekday, formatDurationMinutes, formatInteger } from "@/domain/format";
 import { average, movingAverage, recentRows } from "@/domain/stats";
+import { lateNightMinutesByDate as computeLateNightMinutesByDate, sleepBandsForDay } from "@/domain/activity";
 
 const { data } = useHealthData();
 
@@ -82,73 +83,16 @@ const sleep = computed(() => data.value?.sleepEstimates ?? []);
 const sleepAvgText = (days) =>
   formatDurationMinutes(average(sleep.value.slice(-days).map((r) => r.durationMinutesEst)));
 
-// Late-night activity minutes per date, summed from the hourly breakdown
-// (hours 23 and 0-4 of the same calendar date, matching the window used
-// for the late-night counts: 23:00-04:29).
-const LATE_NIGHT_HOURS = [23, 0, 1, 2, 3, 4];
-const lateNightMinutesByDate = computed(() => {
-  const map = new Map();
-  for (const row of dailyHours.value) {
-    if (LATE_NIGHT_HOURS.includes(row.hour)) {
-      map.set(row.date, (map.get(row.date) ?? 0) + (row.engagedMinutesEst ?? 0));
-    }
-  }
-  return map;
-});
+// Late-night activity minutes per date, summed from the hourly breakdown.
+const lateNightMinutesByDate = computed(() => computeLateNightMinutesByDate(dailyHours.value));
 const lateNightAvgText = (rows) =>
   formatDurationMinutes(
     average(rows.map((r) => lateNightMinutesByDate.value.get(r.date) ?? 0)),
   );
 
-function timeToHours(t) {
-  if (!t) {
-    return null;
-  }
-  const [hh, mm] = t.split(":").map(Number);
-  return hh + mm / 60;
-}
-
-function dayDiff(from, to) {
-  const a = Date.UTC(...from.split("-").map(Number).map((v, i) => (i === 1 ? v - 1 : v)));
-  const b = Date.UTC(...to.split("-").map(Number).map((v, i) => (i === 1 ? v - 1 : v)));
-  return Math.round((b - a) / 86400000);
-}
-
-// Sleep bands (in fractional hours) overlapping the selected calendar day.
-// A sleep row belongs to its wake date and spans the previous evening
-// (20:00) to that morning (08:00). Both ends follow the same rule: a time
-// of 20:00 or later sits on the previous day, an earlier time on the wake
-// date itself. An interval that ends before midnight (e.g. 21:09-23:47)
-// therefore belongs entirely to the previous evening and must not leak
-// into the wake date's chart.
-const sleepBands = computed(() => {
-  if (activeHourKey.value === "total") {
-    return [];
-  }
-  const day = activeHourKey.value;
-  const result = [];
-  for (const row of sleep.value) {
-    const startH = timeToHours(row.sleepStartEst);
-    const endH = timeToHours(row.sleepEndEst);
-    if (startH === null || endH === null) {
-      continue;
-    }
-    const shift = dayDiff(day, row.date) * 24;
-    const start = startH - (startH >= 20 ? 24 : 0) + shift;
-    const end = endH - (endH >= 20 ? 24 : 0) + shift;
-    const from = Math.max(0, start);
-    const to = Math.min(24, end);
-    if (from < to) {
-      result.push({
-        from,
-        to,
-        label: formatDurationMinutes(row.durationMinutesEst),
-        note: `${row.sleepStartEst}–${row.sleepEndEst}、${formatDurationMinutes(row.durationMinutesEst)}`,
-      });
-    }
-  }
-  return result;
-});
+const sleepBands = computed(() =>
+  activeHourKey.value === "total" ? [] : sleepBandsForDay(sleep.value, activeHourKey.value),
+);
 const hourBands = computed(() => sleepBands.value);
 
 // Daily table rows: activity time, sleep time and late-night activity
