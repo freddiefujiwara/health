@@ -221,6 +221,35 @@ export function goalReachDate(fromDate, latestWeightKg, goalKg, avgDailyBalanceK
 }
 
 /** Projection points from the latest measurement into the future. */
+// Least-squares trend line over dated points, returned as the two end
+// points (first and last date) so a chart can draw it as a dashed line.
+// X is days since the first point, so missing weeks do not distort the
+// slope. Returns [] when there are fewer than 2 usable points.
+export function trendLinePoints(points) {
+  const valid = (points ?? []).filter((p) => p && p.date && Number.isFinite(p.value));
+  if (valid.length < 2) {
+    return [];
+  }
+  const dayMs = 86400000;
+  const t0 = Date.parse(valid[0].date);
+  const xs = valid.map((p) => (Date.parse(p.date) - t0) / dayMs);
+  const meanX = xs.reduce((a, b) => a + b, 0) / valid.length;
+  const meanY = valid.reduce((sum, p) => sum + p.value, 0) / valid.length;
+  let sxy = 0;
+  let sxx = 0;
+  valid.forEach((p, i) => {
+    sxy += (xs[i] - meanX) * (p.value - meanY);
+    sxx += (xs[i] - meanX) ** 2;
+  });
+  const slope = sxx === 0 ? 0 : sxy / sxx;
+  const intercept = meanY - slope * meanX;
+  const last = valid.length - 1;
+  return [
+    { date: valid[0].date, value: Math.round(intercept) },
+    { date: valid[last].date, value: Math.round(intercept + slope * xs[last]) },
+  ];
+}
+
 export function projectionPoints(latest, avgDailyBalanceKcal, horizonDays = 90, stepDays = 15, kcalPerKg = KCAL_PER_KG) {
   if (!latest || avgDailyBalanceKcal === null || avgDailyBalanceKcal === undefined) {
     return [];

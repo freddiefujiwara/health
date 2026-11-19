@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { createPinia } from "pinia";
 import Nutrition from "@/views/Nutrition.vue";
 import BarChart from "@/components/BarChart.vue";
+import LineChart from "@/components/LineChart.vue";
 import { useHealthStore } from "@/stores/health";
 import sampleApi from "@/mocks/sampleApi.json";
 import { normalizeHealth } from "@/domain/normalize";
@@ -35,13 +36,22 @@ describe("nutrition weekly average chart", () => {
   it("defaults to the average balance of weeks with at least 6 days, skipping stub weeks", () => {
     const wrapper = buildWrapper();
     const section = wrapper.findAll("section.chart-card")[0];
-    const chart = section.findComponent(BarChart);
+    const chart = section.findComponent(LineChart);
     expect(chart.props("points")).toEqual([
       { date: "2026-08-24", value: -847 },
       { date: "2026-08-31", value: -910 },
       { date: "2026-09-07", value: -800 },
     ]);
-    expect(chart.props("signed")).toBe(true);
+  });
+
+  it("passes the trend line endpoints for the dashed overlay", () => {
+    const wrapper = buildWrapper();
+    const section = wrapper.findAll("section.chart-card")[0];
+    const chart = section.findComponent(LineChart);
+    expect(chart.props("projectionPoints")).toEqual([
+      { date: "2026-08-24", value: -876 },
+      { date: "2026-09-07", value: -829 },
+    ]);
   });
 
   it("switches the charted weekly average by tab", async () => {
@@ -50,21 +60,22 @@ describe("nutrition weekly average chart", () => {
     const tabs = section.findAll("button.lab-tab");
 
     await tabs[2].trigger("click");
-    let chart = section.findComponent(BarChart);
+    let chart = section.findComponent(LineChart);
     expect(chart.props("points")).toEqual([
       { date: "2026-08-24", value: 2984 },
       { date: "2026-08-31", value: 3022 },
       { date: "2026-09-07", value: 2800 },
     ]);
-    expect(chart.props("signed")).toBe(false);
+    expect(chart.props("goalValue")).toBeNull();
     expect(tabs[2].classes()).toContain("is-active");
 
     await tabs[1].trigger("click");
-    chart = section.findComponent(BarChart);
+    chart = section.findComponent(LineChart);
     expect(chart.props("points")).toEqual([
       { date: "2026-08-24", value: 2137 },
       { date: "2026-08-31", value: 2112 },
       { date: "2026-09-07", value: 2000 },
     ]);
+    expect(chart.props("goalValue")).toBe(1990);
   });
 });
