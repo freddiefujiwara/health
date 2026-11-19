@@ -4,7 +4,7 @@ import { useHealthData } from "@/composables/useHealthData";
 import BarChart from "@/components/BarChart.vue";
 import LineChart from "@/components/LineChart.vue";
 import { formatInteger } from "@/domain/format";
-import { average, recentRows, sum, trendLinePoints } from "@/domain/stats";
+import { average, recentRows, sum, trendLinePoints, weekdayIntakeAverages } from "@/domain/stats";
 
 const { data } = useHealthData();
 
@@ -31,6 +31,21 @@ const weeklyPoints = computed(() =>
     .map((r) => ({ date: r.startDate, value: r[activeWeekly.value.field] })),
 );
 const weeklyTrendPoints = computed(() => trendLinePoints(weeklyPoints.value));
+
+// Weekday intake pattern, ordered from the Saturday injection day.
+// Bars are the per-weekday average; the scatter shows each week's
+// actual day, and the guideline is the overall average.
+const weekdayEntries = computed(() => weekdayIntakeAverages(daily.value));
+const weekdayPoints = computed(() =>
+  weekdayEntries.value.map((e) => ({ date: e.label, value: e.averageIntakeKcal })),
+);
+const weekdayScatter = computed(() =>
+  weekdayEntries.value.flatMap((e) => e.values.map((v) => ({ date: e.label, value: v }))),
+);
+const weekdayOverall = computed(() => {
+  const all = weekdayEntries.value.flatMap((e) => e.values);
+  return all.length ? Math.round(average(all)) : null;
+});
 
 const intakePoints = computed(() => last30.value.map((r) => ({ date: r.date, value: r.intakeKcal })));
 const balancePoints = computed(() => last30.value.map((r) => ({ date: r.date, value: r.balanceKcal })));
@@ -69,6 +84,19 @@ const cards = computed(() => [
         :goal-label="activeWeeklyTab === 'intake' ? `目安 ${goals.intakeGuidelineKcal}kcal` : ''"
       />
       <p class="meta">週（月〜日）ごとの1日平均です。点線は全体の傾向（近似直線）です。6日以上そろった週のみ表示しています。</p>
+    </section>
+
+    <section class="chart-card" style="margin-bottom: 16px">
+      <h2 class="section-title">曜日ごとの平均摂取</h2>
+      <BarChart
+        :points="weekdayPoints"
+        :scatter-points="weekdayScatter"
+        unit="kcal"
+        label-type="plain"
+        :guideline-value="weekdayOverall"
+        :guideline-label="weekdayOverall ? `全体平均 ${weekdayOverall}kcal` : ''"
+      />
+      <p class="meta">土曜の注射日を起点に並べています。棒は曜日ごとの平均摂取、点は各週の実績、点線は全体平均です。完了した日のみで集計しています。</p>
     </section>
 
     <div class="card-grid">
