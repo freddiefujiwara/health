@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import BarChart from "@/components/BarChart.vue";
 import { formatInteger } from "@/domain/format";
@@ -13,13 +13,21 @@ const last30 = computed(() => recentRows(daily.value, 30));
 const goals = computed(() => data.value?.goals ?? {});
 const periods = computed(() => [...(data.value?.periodSummaries ?? [])].reverse());
 
-// Weekly average balance (per day), oldest first. Only weeks with at
-// least 6 recorded days are shown, so a stub week (e.g. the single first
-// recording day) does not pose as a weekly average.
-const weeklyBalancePoints = computed(() =>
+// Weekly averages (per day), oldest first, switchable by tab like the
+// featured lab charts. Only weeks with at least 6 recorded days are
+// shown, so a stub week (e.g. the single first recording day) does not
+// pose as a weekly average.
+const weeklyTabs = [
+  { key: "balance", label: "平均収支", field: "averageBalanceKcal" },
+  { key: "intake", label: "平均摂取", field: "averageIntakeKcal" },
+  { key: "expenditure", label: "平均消費", field: "averageExpenditureKcal" },
+];
+const activeWeeklyTab = ref("balance");
+const activeWeekly = computed(() => weeklyTabs.find((t) => t.key === activeWeeklyTab.value));
+const weeklyPoints = computed(() =>
   (data.value?.periodSummaries ?? [])
     .filter((r) => r.days >= 6)
-    .map((r) => ({ date: r.startDate, value: r.averageBalanceKcal })),
+    .map((r) => ({ date: r.startDate, value: r[activeWeekly.value.field] })),
 );
 
 const intakePoints = computed(() => last30.value.map((r) => ({ date: r.date, value: r.intakeKcal })));
@@ -36,9 +44,29 @@ const cards = computed(() => [
 <template>
   <div v-if="data">
     <section class="chart-card" style="margin-bottom: 16px">
-      <h2 class="section-title">週ごとの平均収支</h2>
-      <BarChart :points="weeklyBalancePoints" unit="kcal" signed color="#3b82f6" />
-      <p class="meta">週（月〜日）ごとの1日平均の収支です。6日以上そろった週のみ表示しています。</p>
+      <h2 class="section-title">週ごとの平均</h2>
+      <div class="lab-tabs" role="tablist" aria-label="週ごとの平均">
+        <button
+          v-for="tab in weeklyTabs"
+          :key="tab.key"
+          type="button"
+          role="tab"
+          :aria-selected="tab.key === activeWeeklyTab"
+          :class="tab.key === activeWeeklyTab ? 'lab-tab is-active' : 'lab-tab'"
+          @click="activeWeeklyTab = tab.key"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <BarChart
+        :points="weeklyPoints"
+        unit="kcal"
+        :signed="activeWeeklyTab === 'balance'"
+        :color="activeWeeklyTab === 'balance' ? '#3b82f6' : undefined"
+        :guideline-value="activeWeeklyTab === 'intake' ? goals.intakeGuidelineKcal : null"
+        :guideline-label="activeWeeklyTab === 'intake' ? `目安 ${goals.intakeGuidelineKcal}kcal` : ''"
+      />
+      <p class="meta">週（月〜日）ごとの1日平均です。6日以上そろった週のみ表示しています。</p>
     </section>
 
     <div class="card-grid">
@@ -104,3 +132,28 @@ const cards = computed(() => [
     </section>
   </div>
 </template>
+
+<style scoped>
+.lab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+
+.lab-tab {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: var(--surface-elevated);
+  color: var(--link);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.lab-tab.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+</style>

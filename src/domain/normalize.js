@@ -89,6 +89,7 @@ function normalizePeriodSummaries(rows) {
       endDate: row.end_date ?? "",
       days: toNumber(row.days),
       averageIntakeKcal: toNumber(row.average_intake_kcal),
+      averageExpenditureKcal: toNumber(row.average_expenditure_kcal),
       totalBalanceKcal: toNumber(row.total_balance_kcal),
       averageBalanceKcal: toNumber(row.average_balance_kcal),
     }))
