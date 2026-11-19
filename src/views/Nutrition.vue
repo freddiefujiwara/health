@@ -13,6 +13,15 @@ const last30 = computed(() => recentRows(daily.value, 30));
 const goals = computed(() => data.value?.goals ?? {});
 const periods = computed(() => [...(data.value?.periodSummaries ?? [])].reverse());
 
+// Weekly average balance (per day), oldest first. Only weeks with at
+// least 6 recorded days are shown, so a stub week (e.g. the single first
+// recording day) does not pose as a weekly average.
+const weeklyBalancePoints = computed(() =>
+  (data.value?.periodSummaries ?? [])
+    .filter((r) => r.days >= 6)
+    .map((r) => ({ date: r.startDate, value: r.averageBalanceKcal })),
+);
+
 const intakePoints = computed(() => last30.value.map((r) => ({ date: r.date, value: r.intakeKcal })));
 const balancePoints = computed(() => last30.value.map((r) => ({ date: r.date, value: r.balanceKcal })));
 
@@ -26,6 +35,12 @@ const cards = computed(() => [
 
 <template>
   <div v-if="data">
+    <section class="chart-card" style="margin-bottom: 16px">
+      <h2 class="section-title">週ごとの平均収支</h2>
+      <BarChart :points="weeklyBalancePoints" unit="kcal" signed color="#3b82f6" />
+      <p class="meta">週（月〜日）ごとの1日平均の収支です。6日以上そろった週のみ表示しています。</p>
+    </section>
+
     <div class="card-grid">
       <section v-for="card in cards" :key="card.label" class="card">
         <h2>{{ card.label }}</h2>
