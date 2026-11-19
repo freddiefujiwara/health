@@ -14,6 +14,7 @@ import {
   recentRows,
   remainingToGoal,
   sum,
+  trendLinePoints,
   weeklyBalanceProjection,
 } from "../../src/domain/stats";
 
@@ -284,5 +285,49 @@ describe("weeklyBalanceProjection", () => {
       { date: "2026-10-24", value: 99.3 },
     ]);
     expect(forecastPoints[0]).toEqual(dataPoints[dataPoints.length - 1]);
+  });
+});
+
+describe("trendLinePoints", () => {
+  it("returns [] for fewer than 2 usable points", () => {
+    expect(trendLinePoints([])).toEqual([]);
+    expect(trendLinePoints([{ date: "2026-08-24", value: -847 }])).toEqual([]);
+    expect(trendLinePoints([{ date: "2026-08-24", value: null }, { date: "2026-08-31", value: null }])).toEqual([]);
+    expect(trendLinePoints(null)).toEqual([]);
+  });
+
+  it("fits a perfect line exactly", () => {
+    const points = [
+      { date: "2026-08-24", value: 100 },
+      { date: "2026-08-31", value: 200 },
+      { date: "2026-09-07", value: 300 },
+    ];
+    expect(trendLinePoints(points)).toEqual([
+      { date: "2026-08-24", value: 100 },
+      { date: "2026-09-07", value: 300 },
+    ]);
+  });
+
+  it("fits the least-squares line through noisy weekly points", () => {
+    const points = [
+      { date: "2026-08-24", value: -847 },
+      { date: "2026-08-31", value: -910 },
+      { date: "2026-09-07", value: -800 },
+    ];
+    expect(trendLinePoints(points)).toEqual([
+      { date: "2026-08-24", value: -876 },
+      { date: "2026-09-07", value: -829 },
+    ]);
+  });
+
+  it("is flat when all points share one date", () => {
+    const points = [
+      { date: "2026-08-24", value: 100 },
+      { date: "2026-08-24", value: 300 },
+    ];
+    expect(trendLinePoints(points)).toEqual([
+      { date: "2026-08-24", value: 200 },
+      { date: "2026-08-24", value: 200 },
+    ]);
   });
 });

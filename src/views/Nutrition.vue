@@ -2,8 +2,9 @@
 import { computed, ref } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import BarChart from "@/components/BarChart.vue";
+import LineChart from "@/components/LineChart.vue";
 import { formatInteger } from "@/domain/format";
-import { average, recentRows, sum } from "@/domain/stats";
+import { average, recentRows, sum, trendLinePoints } from "@/domain/stats";
 
 const { data } = useHealthData();
 
@@ -29,6 +30,7 @@ const weeklyPoints = computed(() =>
     .filter((r) => r.days >= 6)
     .map((r) => ({ date: r.startDate, value: r[activeWeekly.value.field] })),
 );
+const weeklyTrendPoints = computed(() => trendLinePoints(weeklyPoints.value));
 
 const intakePoints = computed(() => last30.value.map((r) => ({ date: r.date, value: r.intakeKcal })));
 const balancePoints = computed(() => last30.value.map((r) => ({ date: r.date, value: r.balanceKcal })));
@@ -58,15 +60,15 @@ const cards = computed(() => [
           {{ tab.label }}
         </button>
       </div>
-      <BarChart
+      <LineChart
         :points="weeklyPoints"
+        :projection-points="weeklyTrendPoints"
         unit="kcal"
-        :signed="activeWeeklyTab === 'balance'"
-        :color="activeWeeklyTab === 'balance' ? '#3b82f6' : undefined"
-        :guideline-value="activeWeeklyTab === 'intake' ? goals.intakeGuidelineKcal : null"
-        :guideline-label="activeWeeklyTab === 'intake' ? `目安 ${goals.intakeGuidelineKcal}kcal` : ''"
+        color="#3b82f6"
+        :goal-value="activeWeeklyTab === 'intake' ? goals.intakeGuidelineKcal : null"
+        :goal-label="activeWeeklyTab === 'intake' ? `目安 ${goals.intakeGuidelineKcal}kcal` : ''"
       />
-      <p class="meta">週（月〜日）ごとの1日平均です。6日以上そろった週のみ表示しています。</p>
+      <p class="meta">週（月〜日）ごとの1日平均です。点線は全体の傾向（近似直線）です。6日以上そろった週のみ表示しています。</p>
     </section>
 
     <div class="card-grid">
