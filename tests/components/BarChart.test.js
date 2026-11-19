@@ -100,3 +100,39 @@ describe("bar chart bands", () => {
     expect(wrapper.findAll("rect.band")).toHaveLength(0);
   });
 });
+
+describe("bar chart scatter points and category labels", () => {
+  it("draws one dot per scatter point over the bars", () => {
+    const wrapper = mount(BarChart, {
+      props: {
+        points: [
+          { date: "土（注射日）", value: 2100 },
+          { date: "月", value: 1700 },
+        ],
+        scatterPoints: [
+          { date: "土（注射日）", value: 2000 },
+          { date: "土（注射日）", value: 2200 },
+          { date: "月", value: 1800 },
+          { date: "月", value: null },
+        ],
+        unit: "kcal",
+        labelType: "plain",
+      },
+    });
+    expect(wrapper.findAll("circle.scatter")).toHaveLength(3);
+  });
+
+  it("shows every category label when there are only a few categories", () => {
+    const wrapper = mount(BarChart, {
+      props: {
+        points: ["土（注射日）", "日", "月", "火", "水", "木", "金"].map((label) => ({ date: label, value: 2000 })),
+        unit: "kcal",
+        labelType: "plain",
+      },
+    });
+    const text = wrapper.text();
+    for (const label of ["土（注射日）", "日", "月", "火", "水", "木", "金"]) {
+      expect(text).toContain(label);
+    }
+  });
+});

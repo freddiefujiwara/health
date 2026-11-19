@@ -225,6 +225,35 @@ export function goalReachDate(fromDate, latestWeightKg, goalKg, avgDailyBalanceK
 // points (first and last date) so a chart can draw it as a dashed line.
 // X is days since the first point, so missing weeks do not distort the
 // slope. Returns [] when there are fewer than 2 usable points.
+const WEEKDAY_LABELS_JA = ["日", "月", "火", "水", "木", "金", "土"];
+
+// Average intake grouped by weekday, ordered from Saturday — the
+// weekly injection day — so the appetite cycle across the week reads
+// left to right. Only completed days count.
+export function weekdayIntakeAverages(nutritionRows) {
+  const byDay = new Map();
+  (nutritionRows ?? []).forEach((row) => {
+    if (!row || !row.date || row.completeness !== "完了" || !Number.isFinite(row.intakeKcal)) {
+      return;
+    }
+    const day = new Date(`${String(row.date).slice(0, 10)}T00:00:00`).getDay();
+    if (!byDay.has(day)) {
+      byDay.set(day, []);
+    }
+    byDay.get(day).push(row.intakeKcal);
+  });
+  return [6, 0, 1, 2, 3, 4, 5].map((day) => {
+    const values = byDay.get(day) ?? [];
+    return {
+      day,
+      label: day === 6 ? "土（注射日）" : WEEKDAY_LABELS_JA[day],
+      count: values.length,
+      averageIntakeKcal: values.length ? Math.round(average(values)) : null,
+      values,
+    };
+  });
+}
+
 export function trendLinePoints(points) {
   const valid = (points ?? []).filter((p) => p && p.date && Number.isFinite(p.value));
   if (valid.length < 2) {

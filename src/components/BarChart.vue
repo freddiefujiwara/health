@@ -18,6 +18,8 @@ const props = defineProps({
   labelType: { type: String, default: "date" },
   // [{ from: number, to: number, label?: string }] in category-index units (e.g. hours 0..24); drawn behind the bars
   bands: { type: Array, default: () => [] },
+  // [{ date: category, value }] individual observations drawn as dots over the bars
+  scatterPoints: { type: Array, default: () => [] },
   height: { type: Number, default: 220 },
 });
 
@@ -80,6 +82,7 @@ function render() {
   const minValue = props.signed ? Math.min(0, d3.min(data, (d) => d.value)) : 0;
   const maxValue = Math.max(
     d3.max(data, (d) => d.value),
+    d3.max(props.scatterPoints, (d) => d.value) ?? 0,
     props.guidelineValue ?? 0,
   );
   const y = d3
@@ -88,7 +91,10 @@ function render() {
     .nice()
     .range([h - margin.bottom, margin.top]);
 
-  const tickDates = data.filter((_, i) => i % Math.ceil(data.length / 6) === 0).map((d) => d.date);
+  const tickDates =
+    data.length <= 8
+      ? data.map((d) => d.date)
+      : data.filter((_, i) => i % Math.ceil(data.length / 6) === 0).map((d) => d.date);
   svg
     .append("g")
     .attr("transform", `translate(0,${h - margin.bottom})`)
@@ -171,6 +177,20 @@ function render() {
     .attr("y", barTop)
     .attr("height", (d) => (props.signed ? Math.abs(y(d.value) - y(0)) : y(0) - y(d.value)))
     .attr("fill", (d) => (props.signed && d.value < 0 ? props.negativeColor : props.color));
+
+  if (props.scatterPoints.length) {
+    svg
+      .selectAll("circle.scatter")
+      .data(props.scatterPoints.filter((d) => d.value !== null && d.value !== undefined && x(d.date) !== undefined))
+      .join("circle")
+      .attr("class", "scatter")
+      .attr("cx", (d) => x(d.date) + x.bandwidth() / 2)
+      .attr("cy", (d) => y(d.value))
+      .attr("r", 3)
+      .attr("fill", "#e2e8f0")
+      .attr("opacity", 0.6)
+      .attr("pointer-events", "none");
+  }
 
   svg
     .selectAll("rect.hit")

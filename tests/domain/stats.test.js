@@ -15,6 +15,7 @@ import {
   remainingToGoal,
   sum,
   trendLinePoints,
+  weekdayIntakeAverages,
   weeklyBalanceProjection,
 } from "../../src/domain/stats";
 
@@ -329,5 +330,32 @@ describe("trendLinePoints", () => {
       { date: "2026-08-24", value: 200 },
       { date: "2026-08-24", value: 200 },
     ]);
+  });
+});
+
+describe("weekdayIntakeAverages", () => {
+  const rows = [
+    { date: "2026-11-14", intakeKcal: 2000, completeness: "完了" }, // Sat
+    { date: "2026-11-07", intakeKcal: 2200, completeness: "完了" }, // Sat
+    { date: "2026-11-09", intakeKcal: 1800, completeness: "完了" }, // Mon
+    { date: "2026-11-16", intakeKcal: 1600, completeness: "完了" }, // Mon
+    { date: "2026-11-11", intakeKcal: 9999, completeness: "途中（当日分）" }, // Wed, excluded
+    { date: "2026-11-12", intakeKcal: null, completeness: "完了" }, // Thu, excluded
+    { completeness: "完了", intakeKcal: 1500 }, // no date, excluded
+    null,
+  ];
+
+  it("orders from Saturday (injection day) and averages completed days only", () => {
+    const result = weekdayIntakeAverages(rows);
+    expect(result.map((e) => e.label)).toEqual(["土（注射日）", "日", "月", "火", "水", "木", "金"]);
+    expect(result[0]).toMatchObject({ day: 6, count: 2, averageIntakeKcal: 2100, values: [2000, 2200] });
+    expect(result[2]).toMatchObject({ day: 1, count: 2, averageIntakeKcal: 1700 });
+    expect(result[4]).toMatchObject({ day: 3, count: 0, averageIntakeKcal: null, values: [] });
+  });
+
+  it("returns empty entries for no rows", () => {
+    const result = weekdayIntakeAverages(null);
+    expect(result).toHaveLength(7);
+    expect(result.every((e) => e.count === 0 && e.averageIntakeKcal === null)).toBe(true);
   });
 });

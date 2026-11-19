@@ -18,6 +18,13 @@ function buildWrapper() {
     { startDate: "2026-08-31", endDate: "2026-09-06", days: 7, averageIntakeKcal: 2112, averageExpenditureKcal: 3022, totalBalanceKcal: -6373, averageBalanceKcal: -910 },
     { startDate: "2026-09-07", endDate: "2026-09-13", days: 6, averageIntakeKcal: 2000, averageExpenditureKcal: 2800, totalBalanceKcal: -4800, averageBalanceKcal: -800 },
   ];
+  data.dailyNutrition = [
+    { date: "2026-11-14", intakeKcal: 2000, expenditureKcal: 2900, balanceKcal: -900, completeness: "完了" },
+    { date: "2026-11-07", intakeKcal: 2200, expenditureKcal: 2900, balanceKcal: -700, completeness: "完了" },
+    { date: "2026-11-09", intakeKcal: 1800, expenditureKcal: 2800, balanceKcal: -1000, completeness: "完了" },
+    { date: "2026-11-16", intakeKcal: 1600, expenditureKcal: 2800, balanceKcal: -1200, completeness: "完了" },
+    { date: "2026-11-11", intakeKcal: 9999, expenditureKcal: 2800, balanceKcal: 7199, completeness: "途中（当日分）" },
+  ];
   store.data = data;
   store.source = "live";
   return mount(Nutrition, { global: { plugins: [pinia] } });
@@ -77,5 +84,24 @@ describe("nutrition weekly average chart", () => {
       { date: "2026-09-07", value: 2000 },
     ]);
     expect(chart.props("goalValue")).toBe(1990);
+  });
+});
+
+describe("nutrition weekday intake chart", () => {
+  it("shows the weekday chart below the weekly chart", () => {
+    const wrapper = buildWrapper();
+    const section = wrapper.findAll("section.chart-card")[1];
+    expect(section.find("h2").text()).toBe("曜日ごとの平均摂取");
+  });
+
+  it("averages intake per weekday from the Saturday injection day, completed days only", () => {
+    const wrapper = buildWrapper();
+    const section = wrapper.findAll("section.chart-card")[1];
+    const chart = section.findComponent(BarChart);
+    const points = chart.props("points");
+    expect(points[0]).toEqual({ date: "土（注射日）", value: 2100 });
+    expect(points[2]).toEqual({ date: "月", value: 1700 });
+    expect(chart.props("scatterPoints")).toHaveLength(4);
+    expect(chart.props("guidelineValue")).toBe(1900);
   });
 });
