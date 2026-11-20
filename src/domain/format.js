@@ -1,14 +1,19 @@
 /** Number / unit formatting helpers (ja-JP). */
 
+// Same contract as formatChartValue below: anything that is not a
+// finite number renders as the missing-value dash, so a deformed
+// value can never surface as "NaN", "Infinity" or "[object Object]".
+const isFormattable = (value) => typeof value === "number" && Number.isFinite(value);
+
 export function formatInteger(value) {
-  if (value === null || value === undefined) {
+  if (!isFormattable(value)) {
     return "-";
   }
   return Math.round(value).toLocaleString("ja-JP");
 }
 
 export function formatDecimal(value, digits = 1) {
-  if (value === null || value === undefined) {
+  if (!isFormattable(value)) {
     return "-";
   }
   return value.toLocaleString("ja-JP", {
@@ -22,17 +27,20 @@ export function formatKg(value) {
 }
 
 export function formatPercentChange(current, baseline) {
-  if (current === null || current === undefined || !baseline) {
+  if (!isFormattable(current) || !baseline) {
     return "-";
   }
   const pct = ((current - baseline) / baseline) * 100;
+  if (!Number.isFinite(pct)) {
+    return "-";
+  }
   const sign = pct > 0 ? "+" : "";
   return `${sign}${pct.toFixed(1)}%`;
 }
 
 /** Minutes -> "15時間20分" / "1時間" / "45分" / "0分". */
 export function formatDurationMinutes(value) {
-  if (value === null || value === undefined) {
+  if (!isFormattable(value)) {
     return "-";
   }
   const total = Math.round(value);
@@ -63,12 +71,21 @@ export function formatChartValue(value) {
 
 const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
-/** "2026-11-12" -> "2026/11/12（木）". Returns "" for empty input. */
+/** "2026-11-12" -> "2026/11/12（木）". Returns "" for empty or invalid input. */
 export function formatDateWithWeekday(date) {
-  if (!date) {
+  if (typeof date !== "string" || !date) {
     return "";
   }
-  const [y, m, d] = date.split("-").map(Number);
-  const weekday = WEEKDAYS_JA[new Date(y, m - 1, d).getDay()];
+  const parts = date.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) {
+    return "";
+  }
+  const [y, m, d] = parts;
+  const parsed = new Date(y, m - 1, d);
+  // Reject roll-overs such as "2026-02-30" (which Date reads as Mar 2).
+  if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) {
+    return "";
+  }
+  const weekday = WEEKDAYS_JA[parsed.getDay()];
   return `${date.replaceAll("-", "/")}（${weekday}）`;
 }

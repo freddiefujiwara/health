@@ -3,12 +3,42 @@
  * into sorted, typed structures the views can consume directly.
  */
 
+/**
+ * Numeric cells: only numbers and numeric strings parse. Booleans,
+ * arrays, objects and blank strings read as missing — Number() would
+ * silently coerce them (true -> 1, [] -> 0, [65] -> 65) or, for an
+ * object whose toString is not a function, throw outright.
+ */
 function toNumber(value) {
-  if (value === null || value === undefined || value === "") {
-    return null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
   }
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
+  if (typeof value === "string" && value.trim() !== "") {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+}
+
+/**
+ * Text cells: strings pass through and numbers stringify; anything
+ * else (null, booleans, arrays, objects) reads as "". String() is not
+ * used on unknown values — it throws for an object whose toString is
+ * not a function.
+ */
+function toText(value) {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return String(value);
+  }
+  return "";
+}
+
+/** A sheet key holding anything but an array reads as no rows. */
+function asRows(rows) {
+  return Array.isArray(rows) ? rows : [];
 }
 
 function byDateAsc(a, b) {
@@ -19,8 +49,8 @@ function normalizeBodyComposition(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
-      date: row.date,
-      measurementType: row.measurement_type ?? "",
+      date: toText(row.date),
+      measurementType: toText(row.measurement_type),
       weightKg: toNumber(row.weight_kg),
       bmi: toNumber(row.bmi),
       bodyFatPercent: toNumber(row.body_fat_percent),
@@ -42,7 +72,7 @@ function normalizeDailyNutrition(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
-      date: row.date,
+      date: toText(row.date),
       intakeKcal: toNumber(row.intake_kcal),
       expenditureKcal: toNumber(row.expenditure_kcal),
       balanceKcal: toNumber(row.balance_kcal),
@@ -50,7 +80,7 @@ function normalizeDailyNutrition(rows) {
       fatG: toNumber(row.fat_g),
       carbohydratesG: toNumber(row.carbohydrates_g),
       saltG: toNumber(row.salt_g),
-      completeness: row.completeness ?? "",
+      completeness: toText(row.completeness),
     }))
     .sort(byDateAsc);
 }
@@ -59,11 +89,11 @@ function normalizeSteps(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
-      date: row.date,
+      date: toText(row.date),
       steps: toNumber(row.steps),
       distanceM: toNumber(row.distance_walking_running_m),
       flightsClimbed: toNumber(row.flights_climbed),
-      completeness: row.completeness ?? "",
+      completeness: toText(row.completeness),
     }))
     .sort(byDateAsc);
 }
@@ -72,8 +102,8 @@ function normalizeSegments(rows) {
   return rows
     .filter((row) => row && row.date && row.segment)
     .map((row) => ({
-      date: row.date,
-      segment: row.segment,
+      date: toText(row.date),
+      segment: toText(row.segment),
       muscleMassKg: toNumber(row.muscle_mass_kg),
       fatPercent: toNumber(row.fat_percent),
       fatMassKg: toNumber(row.fat_mass_kg),
@@ -85,8 +115,8 @@ function normalizePeriodSummaries(rows) {
   return rows
     .filter((row) => row && row.start_date)
     .map((row) => ({
-      startDate: row.start_date,
-      endDate: row.end_date ?? "",
+      startDate: toText(row.start_date),
+      endDate: toText(row.end_date),
       days: toNumber(row.days),
       averageIntakeKcal: toNumber(row.average_intake_kcal),
       averageExpenditureKcal: toNumber(row.average_expenditure_kcal),
@@ -100,24 +130,24 @@ function normalizeLabResults(rows) {
   return rows
     .filter((row) => row && row.date && row.item)
     .map((row) => ({
-      date: row.date,
-      panel: row.panel ?? "",
-      category: row.category ?? "",
-      item: row.item,
-      value: row.value ?? "",
+      date: toText(row.date),
+      panel: toText(row.panel),
+      category: toText(row.category),
+      item: toText(row.item),
+      value: toText(row.value),
       valueNumber: toNumber(row.value),
-      flag: row.flag ?? "",
-      unit: row.unit ?? "",
-      reference: row.reference ?? "",
-      source: row.source ?? "",
-      notes: row.notes ?? "",
+      flag: toText(row.flag),
+      unit: toText(row.unit),
+      reference: toText(row.reference),
+      source: toText(row.source),
+      notes: toText(row.notes),
     }))
     .sort(byDateAsc);
 }
 
 /** "4:14" / "13:04" -> "04:14" / "13:04"; anything else -> "". */
 function normalizeTimeText(value) {
-  const match = String(value ?? "").trim().match(/^(\d{1,2}):(\d{2})/);
+  const match = toText(value).trim().match(/^(\d{1,2}):(\d{2})/);
   if (!match) {
     return "";
   }
@@ -128,14 +158,14 @@ function normalizeChatActivity(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
-      date: String(row.date).slice(0, 10),
+      date: toText(row.date).slice(0, 10),
       userMessageCount: toNumber(row.user_message_count),
       engagedMinutesEst: toNumber(row.engaged_minutes_est),
       sessionCount: toNumber(row.session_count),
       firstMessageAt: normalizeTimeText(row.first_message_at),
       lastMessageAt: normalizeTimeText(row.last_message_at),
       lateNightMessageCount: toNumber(row.late_night_message_count),
-      notes: row.notes ?? "",
+      notes: toText(row.notes),
     }))
     .sort(byDateAsc);
 }
@@ -155,7 +185,7 @@ function normalizeChatActivityDailyHours(rows) {
   return rows
     .filter((row) => row && row.date && row.hour !== null && row.hour !== undefined && row.hour !== "")
     .map((row) => ({
-      date: row.date,
+      date: toText(row.date),
       hour: toNumber(row.hour),
       userMessageCount: toNumber(row.user_message_count),
       engagedMinutesEst: toNumber(row.engaged_minutes_est),
@@ -167,7 +197,7 @@ function normalizeSleepEstimates(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
-      date: row.date,
+      date: toText(row.date),
       sleepStartEst: row.sleep_start_est ?? null,
       sleepEndEst: row.sleep_end_est ?? null,
       durationMinutesEst: toNumber(row.duration_minutes_est),
@@ -194,11 +224,11 @@ function normalizeGoals(rows) {
     switch (row.item) {
       case "開始時体重":
         goals.startWeightKg = toNumber(row.value);
-        goals.startDate = String(row.unit_or_date ?? "").replace("kg / ", "");
+        goals.startDate = toText(row.unit_or_date).replace("kg / ", "");
         break;
       case "最新体重":
         goals.latestWeightKg = toNumber(row.value);
-        goals.latestDate = String(row.unit_or_date ?? "").replace("kg / ", "");
+        goals.latestDate = toText(row.unit_or_date).replace("kg / ", "");
         break;
       case "中間目標":
         goals.interimGoalKg = toNumber(row.value);
@@ -207,7 +237,7 @@ function normalizeGoals(rows) {
         goals.finalGoalKg = toNumber(row.value);
         break;
       case "目標日":
-        goals.targetDate = String(row.value ?? "");
+        goals.targetDate = toText(row.value);
         break;
       case "摂取目安":
         goals.intakeGuidelineKcal = toNumber(row.value);
@@ -225,16 +255,16 @@ function normalizeGoals(rows) {
 export function normalizeHealth(payload) {
   const source = payload ?? {};
   return {
-    bodyComposition: normalizeBodyComposition(source.body_composition ?? []),
-    dailyNutrition: normalizeDailyNutrition(source.daily_nutrition ?? []),
-    steps: normalizeSteps(source.steps ?? []),
-    segments: normalizeSegments(source.body_segments ?? []),
-    periodSummaries: normalizePeriodSummaries(source.period_summaries ?? []),
-    labResults: normalizeLabResults(source.lab_results ?? []),
-    chatActivity: normalizeChatActivity(source.chat_activity ?? []),
-    chatActivityHours: normalizeChatActivityHours(source.chat_activity_hours ?? []),
-    chatActivityDailyHours: normalizeChatActivityDailyHours(source.chat_activity_daily_hours ?? []),
-    sleepEstimates: normalizeSleepEstimates(source.sleep_estimates ?? []),
-    goals: normalizeGoals(source.goals_settings ?? []),
+    bodyComposition: normalizeBodyComposition(asRows(source.body_composition)),
+    dailyNutrition: normalizeDailyNutrition(asRows(source.daily_nutrition)),
+    steps: normalizeSteps(asRows(source.steps)),
+    segments: normalizeSegments(asRows(source.body_segments)),
+    periodSummaries: normalizePeriodSummaries(asRows(source.period_summaries)),
+    labResults: normalizeLabResults(asRows(source.lab_results)),
+    chatActivity: normalizeChatActivity(asRows(source.chat_activity)),
+    chatActivityHours: normalizeChatActivityHours(asRows(source.chat_activity_hours)),
+    chatActivityDailyHours: normalizeChatActivityDailyHours(asRows(source.chat_activity_daily_hours)),
+    sleepEstimates: normalizeSleepEstimates(asRows(source.sleep_estimates)),
+    goals: normalizeGoals(asRows(source.goals_settings)),
   };
 }

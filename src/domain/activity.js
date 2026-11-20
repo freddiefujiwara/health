@@ -7,21 +7,28 @@ const LATE_NIGHT_HOURS = [23, 0, 1, 2, 3, 4];
 /** Minutes of late-night activity per calendar date, as a Map. */
 export function lateNightMinutesByDate(dailyHourRows) {
   const map = new Map();
-  for (const row of dailyHourRows) {
-    if (LATE_NIGHT_HOURS.includes(row.hour)) {
-      map.set(row.date, (map.get(row.date) ?? 0) + (row.engagedMinutesEst ?? 0));
+  for (const row of dailyHourRows ?? []) {
+    if (!row || !LATE_NIGHT_HOURS.includes(row.hour)) {
+      continue;
     }
+    // A non-numeric estimate counts as 0: adding it raw would
+    // concatenate strings into the total or throw on odd objects.
+    const minutes = Number.isFinite(row.engagedMinutesEst) ? row.engagedMinutesEst : 0;
+    map.set(row.date, (map.get(row.date) ?? 0) + minutes);
   }
   return map;
 }
 
 /** "21:09" -> 21.15 (fractional hours); null when there is no time. */
 export function timeToHours(t) {
-  if (!t) {
+  if (typeof t !== "string") {
     return null;
   }
-  const [hh, mm] = t.split(":").map(Number);
-  return hh + mm / 60;
+  const match = t.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) {
+    return null;
+  }
+  return Number(match[1]) + Number(match[2]) / 60;
 }
 
 /** Whole days from one YYYY-MM-DD date to another. */
@@ -42,7 +49,10 @@ function dayDiff(from, to) {
  */
 export function sleepBandsForDay(sleepRows, day) {
   const result = [];
-  for (const row of sleepRows) {
+  for (const row of sleepRows ?? []) {
+    if (!row) {
+      continue;
+    }
     const startH = timeToHours(row.sleepStartEst);
     const endH = timeToHours(row.sleepEndEst);
     if (startH === null || endH === null) {

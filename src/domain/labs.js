@@ -1,9 +1,15 @@
 /** Helpers for the lab_results sheet (long-format lab data). */
 
+const asRows = (rows) => (Array.isArray(rows) ? rows : []);
+const isRow = (row) => row !== null && typeof row === "object";
+
 /** Group rows by date (newest first), keeping the row order within a date. */
 export function groupLabResults(rows) {
   const groups = new Map();
-  for (const row of rows) {
+  for (const row of asRows(rows)) {
+    if (!isRow(row)) {
+      continue;
+    }
     if (!groups.has(row.date)) {
       groups.set(row.date, { date: row.date, panel: row.panel, rows: [] });
     }
@@ -12,17 +18,17 @@ export function groupLabResults(rows) {
   return [...groups.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
-/** Time series points for one item (numeric values only, date ascending). */
+/** Time series points for one item (finite numeric values only, date ascending). */
 export function labItemSeries(rows, item) {
-  return rows
-    .filter((row) => row.item === item && row.valueNumber !== null && row.valueNumber !== undefined)
+  return asRows(rows)
+    .filter((row) => isRow(row) && row.item === item && Number.isFinite(row.valueNumber))
     .map((row) => ({ date: row.date, value: row.valueNumber }))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
 /** Unit of the most recent row for an item ("" when unknown). */
 export function labItemUnit(rows, item) {
-  const series = rows.filter((row) => row.item === item);
+  const series = asRows(rows).filter((row) => isRow(row) && row.item === item);
   return series.length ? (series[series.length - 1].unit ?? "") : "";
 }
 
