@@ -6,14 +6,20 @@
 
 /** Extract the share token from a location hash string, or return "". */
 export function parseShareToken(hash) {
-  if (!hash) {
+  if (typeof hash !== "string" || !hash) {
     return "";
   }
   const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
   for (const part of fragment.split("&")) {
     const eq = part.indexOf("=");
     if (eq > 0 && part.slice(0, eq) === "share") {
-      return decodeURIComponent(part.slice(eq + 1));
+      try {
+        return decodeURIComponent(part.slice(eq + 1));
+      } catch {
+        // A copied share link can carry a truncated percent escape;
+        // read it as no token rather than throwing into the load path.
+        return "";
+      }
     }
   }
   return "";
@@ -21,13 +27,16 @@ export function parseShareToken(hash) {
 
 /** Build the URL a doctor opens: the app base plus the share fragment. */
 export function buildShareUrl(baseUrl, token) {
+  if (!token) {
+    return baseUrl;
+  }
   return `${baseUrl}#share=${encodeURIComponent(token)}`;
 }
 
 /** Whole seconds until the session expires; null when the date is invalid. */
 export function shareSecondsLeft(expiresAt, nowMs) {
   const expiresMs = Date.parse(expiresAt);
-  if (Number.isNaN(expiresMs)) {
+  if (Number.isNaN(expiresMs) || !Number.isFinite(nowMs)) {
     return null;
   }
   return Math.max(0, Math.ceil((expiresMs - nowMs) / 1000));
@@ -46,7 +55,7 @@ export function formatShareExpiry(expiresAt) {
 
 /** Human label such as "残り約30日" / "残り約30分" / "残り約1分未満" / "期限切れ". */
 export function formatShareRemaining(seconds) {
-  if (seconds === null) {
+  if (!Number.isFinite(seconds)) {
     return "";
   }
   if (seconds <= 0) {

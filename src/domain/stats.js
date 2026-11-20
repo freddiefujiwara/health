@@ -1,15 +1,21 @@
 /** Derived statistics for the dashboard views. */
 
 export function latestOf(rows) {
-  return rows.length ? rows[rows.length - 1] : null;
+  return rows?.length ? rows[rows.length - 1] : null;
 }
 
 export function firstOf(rows) {
-  return rows.length ? rows[0] : null;
+  return rows?.length ? rows[0] : null;
 }
 
+// Only finite numbers take part: NaN / Infinity manufactured by
+// upstream arithmetic, and non-numbers arriving in a deformed
+// payload, are read as missing rather than leaking into an average
+// or a total (a string would otherwise concatenate, not add).
+const finiteNumbers = (values) => values.filter((v) => Number.isFinite(v));
+
 export function average(values) {
-  const nums = values.filter((v) => v !== null && v !== undefined);
+  const nums = finiteNumbers(values);
   if (!nums.length) {
     return null;
   }
@@ -17,7 +23,7 @@ export function average(values) {
 }
 
 export function sum(values) {
-  const nums = values.filter((v) => v !== null && v !== undefined);
+  const nums = finiteNumbers(values);
   if (!nums.length) {
     return null;
   }
@@ -31,7 +37,7 @@ export function movingAverage(values, windowSize) {
 
 /** Rows whose date is within the last `days` days counting back from the latest row. */
 export function recentRows(rows, days) {
-  if (!rows.length) {
+  if (!rows?.length) {
     return [];
   }
   const latest = rows[rows.length - 1].date;
@@ -42,7 +48,7 @@ export function recentRows(rows, days) {
 
 /** Distance remaining from the latest weight to a goal weight (negative when passed). */
 export function remainingToGoal(latestWeightKg, goalKg) {
-  if (latestWeightKg === null || latestWeightKg === undefined || goalKg === null || goalKg === undefined) {
+  if (!Number.isFinite(latestWeightKg) || !Number.isFinite(goalKg)) {
     return null;
   }
   return latestWeightKg - goalKg;
@@ -51,9 +57,9 @@ export function remainingToGoal(latestWeightKg, goalKg) {
 /** Progress from start weight toward a goal weight, as a 0-100 percentage. */
 export function goalProgressPercent(startKg, latestKg, goalKg) {
   if (
-    startKg === null || startKg === undefined
-    || latestKg === null || latestKg === undefined
-    || goalKg === null || goalKg === undefined
+    !Number.isFinite(startKg)
+    || !Number.isFinite(latestKg)
+    || !Number.isFinite(goalKg)
     || startKg === goalKg
   ) {
     return null;
@@ -65,7 +71,13 @@ export function goalProgressPercent(startKg, latestKg, goalKg) {
 /** Energy equivalent used for weight prediction: 7,700 kcal ≈ 1 kg of body fat. */
 export const KCAL_PER_KG = 7700;
 
-const date10 = (value) => String(value ?? "").slice(0, 10);
+// First 10 chars of a date string; anything that is not a string
+// (including an object whose toString is not a function, which
+// String() would throw on) reads as "".
+const date10 = (value) => (typeof value === "string" ? value.slice(0, 10) : "");
+
+// Date.parse without coercion surprises: non-strings are unparseable.
+const parseDateMs = (value) => (typeof value === "string" ? Date.parse(value) : Number.NaN);
 
 /**
  * Empirical energy equivalent derived from the recorded data: the total
@@ -131,6 +143,12 @@ export function weeklyBalanceProjection(
     return { dataPoints: [], forecastPoints: [] };
   }
   const anchor = { date: date10(latest.date), value: latest.weightKg };
+  if (!Number.isFinite(kcalPerKg) || kcalPerKg <= 0) {
+    // Without a usable energy equivalent the projection would divide
+    // by it and leak Infinity / NaN into the chart; the measured
+    // anchor point is all that can honestly be shown.
+    return { dataPoints: [anchor], forecastPoints: [] };
+  }
   const completed = (nutritionRows ?? [])
     .filter(
       (row) => row && row.completeness === "完了" && Number.isFinite(row.balanceKcal),
@@ -164,7 +182,7 @@ export function weeklyBalanceProjection(
   }
 
   const forecastPoints = [];
-  if (avgDailyBalanceKcal !== null && avgDailyBalanceKcal !== undefined) {
+  if (Number.isFinite(avgDailyBalanceKcal)) {
     const lastData = dataPoints[dataPoints.length - 1];
     forecastPoints.push(lastData);
     for (let d = lastStep + stepDays; d <= horizonDays; d += stepDays) {
@@ -177,16 +195,23 @@ export function weeklyBalanceProjection(
   return { dataPoints, forecastPoints };
 }
 
+/** Adds days to a YYYY-MM-DD date; "" when the date cannot be parsed. */
 export function addDays(dateStr, days) {
-  const ms = Date.parse(dateStr) + days * 24 * 60 * 60 * 1000;
+  const ms = parseDateMs(dateStr) + days * 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(ms)) {
+    return "";
+  }
   return new Date(ms).toISOString().slice(0, 10);
 }
 
 /** Predicted weight after `days` days at a constant daily calorie balance. */
 export function predictWeightKg(latestWeightKg, avgDailyBalanceKcal, days, kcalPerKg = KCAL_PER_KG) {
   if (
-    latestWeightKg === null || latestWeightKg === undefined
-    || avgDailyBalanceKcal === null || avgDailyBalanceKcal === undefined
+    !Number.isFinite(latestWeightKg)
+    || !Number.isFinite(avgDailyBalanceKcal)
+    || !Number.isFinite(days)
+    || !Number.isFinite(kcalPerKg)
+    || kcalPerKg <= 0
   ) {
     return null;
   }
@@ -196,9 +221,11 @@ export function predictWeightKg(latestWeightKg, avgDailyBalanceKcal, days, kcalP
 /** Days needed to reach a goal weight at a constant daily balance (null when not reachable). */
 export function daysToGoalWeight(latestWeightKg, goalKg, avgDailyBalanceKcal, kcalPerKg = KCAL_PER_KG) {
   if (
-    latestWeightKg === null || latestWeightKg === undefined
-    || goalKg === null || goalKg === undefined
-    || avgDailyBalanceKcal === null || avgDailyBalanceKcal === undefined
+    !Number.isFinite(latestWeightKg)
+    || !Number.isFinite(goalKg)
+    || !Number.isFinite(avgDailyBalanceKcal)
+    || !Number.isFinite(kcalPerKg)
+    || kcalPerKg <= 0
   ) {
     return null;
   }
@@ -236,7 +263,7 @@ export function weekdayIntakeAverages(nutritionRows) {
     if (!row || !row.date || row.completeness !== "完了" || !Number.isFinite(row.intakeKcal)) {
       return;
     }
-    const day = new Date(`${String(row.date).slice(0, 10)}T00:00:00`).getDay();
+    const day = new Date(`${date10(row.date)}T00:00:00`).getDay();
     if (!byDay.has(day)) {
       byDay.set(day, []);
     }
@@ -255,7 +282,9 @@ export function weekdayIntakeAverages(nutritionRows) {
 }
 
 export function trendLinePoints(points) {
-  const valid = (points ?? []).filter((p) => p && p.date && Number.isFinite(p.value));
+  const valid = (points ?? []).filter(
+    (p) => p && p.date && Number.isFinite(p.value) && Number.isFinite(parseDateMs(p.date)),
+  );
   if (valid.length < 2) {
     return [];
   }
