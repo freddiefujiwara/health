@@ -2,8 +2,9 @@
 import { computed } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import LineChart from "@/components/LineChart.vue";
+import StackedBarChart from "@/components/StackedBarChart.vue";
 import { formatDecimal, formatInteger } from "@/domain/format";
-import { bodyCompositionChanges } from "@/domain/stats";
+import { bodyCompositionChanges, weightComposition } from "@/domain/stats";
 
 const { data } = useHealthData();
 
@@ -20,7 +21,7 @@ const deltaText = (c) => {
   return `前回比 ${sign}${formatDecimal(Math.abs(c.delta), c.digits)}${c.unit ? ` ${c.unit}` : ""}`;
 };
 
-const weightPoints = computed(() => tanita.value.map((r) => ({ date: r.date, value: r.weightKg })));
+const compositionPoints = computed(() => weightComposition(tanita.value));
 const fatPoints = computed(() => tanita.value.map((r) => ({ date: r.date, value: r.bodyFatPercent })));
 const musclePoints = computed(() => tanita.value.map((r) => ({ date: r.date, value: r.muscleMassKg })));
 
@@ -56,8 +57,14 @@ const latestSegments = computed(() =>
 
     <div class="chart-grid">
       <section class="chart-card">
-        <h2 class="section-title">体重（kg）</h2>
-        <LineChart :points="weightPoints" unit="kg" hide-axis-in-private />
+        <h2 class="section-title">体重の内訳（kg）</h2>
+        <StackedBarChart :points="compositionPoints" unit="kg" hide-axis-in-private />
+        <div class="composition-legend">
+          <span><i class="dot dot-fat"></i>脂肪量</span>
+          <span><i class="dot dot-muscle"></i>筋肉量</span>
+          <span><i class="dot dot-other"></i>その他（水分・タンパク質・骨など）</span>
+        </div>
+        <p class="composition-note">バーの高さが体重です。減った分が脂肪か筋肉かが見分けられます。</p>
       </section>
       <section class="chart-card">
         <h2 class="section-title">体脂肪率（%）</h2>
@@ -149,5 +156,33 @@ const latestSegments = computed(() =>
 }
 .tone-flat {
   opacity: 0.65;
+}
+.composition-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  margin-top: 6px;
+}
+.composition-legend .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 5px;
+}
+.dot-fat {
+  background: #f59e0b;
+}
+.dot-muscle {
+  background: #22c55e;
+}
+.dot-other {
+  background: #64748b;
+}
+.composition-note {
+  font-size: 12px;
+  opacity: 0.75;
+  margin: 6px 0 0;
 }
 </style>
