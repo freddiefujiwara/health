@@ -47,6 +47,24 @@ describe("activity view", () => {
     expect(rows[1].text()).toContain("18時間15分");
   });
 
+  it("renders the work hours section when work_hours rows exist", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    store.data = normalizeHealth({
+      work_hours: [
+        { date: "2026-11-20", net_work_minutes: "", status: "未確定", first_arrive: "09:05", last_leave: "", pair_count: 0 },
+        { date: "2026-11-21", net_work_minutes: 570, status: "確定", first_arrive: "09:00", last_leave: "18:30", pair_count: 1 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("勤務時間");
+    expect(wrapper.text()).toContain("9時間30分");
+    expect(wrapper.text()).toContain("未確定");
+    expect(wrapper.text()).toContain("18:30");
+  });
+
   it("joins sleep and late-night minutes into the daily table by date", async () => {
     const pinia = createPinia();
     const store = useHealthStore(pinia);
