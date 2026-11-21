@@ -29,6 +29,21 @@ describe("stacked bar chart", () => {
     expect(tooltip.text()).toContain("筋肉 59.6");
   });
 
+  it("draws the line overlay and right axis when line points are given", () => {
+    const wrapper = mount(StackedBarChart, {
+      props: {
+        points,
+        linePoints: [
+          { date: "2026-07-25", value: 34.6 },
+          { date: "2026-11-21", value: 29.4 },
+        ],
+      },
+    });
+    expect(wrapper.find("path.line-overlay").exists()).toBe(true);
+    expect(wrapper.findAll("circle.line-dot")).toHaveLength(2);
+    expect(wrapper.text()).toContain("30%");
+  });
+
   it("shows an empty message without data", () => {
     const wrapper = mount(StackedBarChart, { props: { points: [] } });
     expect(wrapper.text()).toContain("データがありません");

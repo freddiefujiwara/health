@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
-import LineChart from "@/components/LineChart.vue";
 import StackedBarChart from "@/components/StackedBarChart.vue";
 import { formatDecimal, formatInteger } from "@/domain/format";
 import { bodyCompositionChanges, weightComposition } from "@/domain/stats";
@@ -22,8 +21,11 @@ const deltaText = (c) => {
 };
 
 const compositionPoints = computed(() => weightComposition(tanita.value));
-const fatPoints = computed(() => tanita.value.map((r) => ({ date: r.date, value: r.bodyFatPercent })));
-const musclePoints = computed(() => tanita.value.map((r) => ({ date: r.date, value: r.muscleMassKg })));
+const fatLinePoints = computed(() =>
+  tanita.value
+    .map((r) => ({ date: r.date, value: r.bodyFatPercent }))
+    .filter((p) => Number.isFinite(p.value)),
+);
 
 const segmentLabels = {
   trunk: "体幹",
@@ -57,22 +59,20 @@ const latestSegments = computed(() =>
 
     <div class="chart-grid">
       <section class="chart-card">
-        <h2 class="section-title">体重の内訳（kg）</h2>
-        <StackedBarChart :points="compositionPoints" unit="kg" hide-axis-in-private />
+        <h2 class="section-title">体重の内訳（kg）と体脂肪率（%）</h2>
+        <StackedBarChart
+          :points="compositionPoints"
+          :line-points="fatLinePoints"
+          unit="kg"
+          hide-axis-in-private
+        />
         <div class="composition-legend">
           <span><i class="dot dot-fat"></i>脂肪量</span>
           <span><i class="dot dot-muscle"></i>筋肉量</span>
           <span><i class="dot dot-other"></i>その他（水分・タンパク質・骨など）</span>
+          <span><i class="dot dot-line"></i>体脂肪率（右軸）</span>
         </div>
-        <p class="composition-note">バーの高さが体重です。減った分が脂肪か筋肉かが見分けられます。</p>
-      </section>
-      <section class="chart-card">
-        <h2 class="section-title">体脂肪率（%）</h2>
-        <LineChart :points="fatPoints" unit="%" color="#f59e0b" />
-      </section>
-      <section class="chart-card">
-        <h2 class="section-title">筋肉量（kg）</h2>
-        <LineChart :points="musclePoints" unit="kg" color="#22c55e" hide-axis-in-private />
+        <p class="composition-note">バーの高さが体重です。減った分が脂肪か筋肉かが見分けられます。青い線が体脂肪率（右軸）です。</p>
       </section>
     </div>
 
@@ -179,6 +179,10 @@ const latestSegments = computed(() =>
 }
 .dot-other {
   background: #64748b;
+}
+.dot-line {
+  background: #38bdf8;
+  height: 3px;
 }
 .composition-note {
   font-size: 12px;
