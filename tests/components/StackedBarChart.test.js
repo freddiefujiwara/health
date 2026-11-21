@@ -41,6 +41,9 @@ describe("stacked bar chart", () => {
     });
     expect(wrapper.find("path.line-overlay").exists()).toBe(true);
     expect(wrapper.findAll("circle.line-dot")).toHaveLength(2);
+    const lineValues = wrapper.findAll("text.line-value");
+    expect(lineValues).toHaveLength(2);
+    expect(lineValues[1].text()).toBe("29.4%");
     expect(wrapper.text()).toContain("30%");
   });
 
