@@ -9,6 +9,10 @@ const props = defineProps({
   // [{ date: 'YYYY-MM-DD', totalKg, fatKg, muscleKg, otherKg }]
   points: { type: Array, required: true },
   unit: { type: String, default: "kg" },
+  // [{ date, value }] drawn as a line on a secondary (right) axis
+  linePoints: { type: Array, default: () => [] },
+  lineUnit: { type: String, default: "%" },
+  lineColor: { type: String, default: "#38bdf8" },
   hideAxisInPrivate: { type: Boolean, default: false },
   height: { type: Number, default: 220 },
 });
@@ -50,7 +54,8 @@ function render() {
   hideTooltip();
   const w = Math.max(260, width.value);
   const h = props.height;
-  const margin = { top: 20, right: 12, bottom: 24, left: 48 };
+  const hasLine = props.linePoints.some((p) => p && Number.isFinite(p.value));
+  const margin = { top: 20, right: hasLine ? 44 : 12, bottom: 24, left: 48 };
   d3.select(el).selectAll("*").remove();
   const svg = d3
     .select(el)
@@ -147,6 +152,46 @@ function render() {
       .text(formatDecimal(d.totalKg));
   }
 
+  if (hasLine) {
+    const lineData = props.linePoints.filter(
+      (p) => p && Number.isFinite(p.value) && x(p.date) !== undefined,
+    );
+    const yRight = d3
+      .scaleLinear()
+      .domain(d3.extent(lineData, (d) => d.value))
+      .nice()
+      .range([h - margin.bottom, margin.top]);
+    svg
+      .append("g")
+      .attr("transform", `translate(${w - margin.right},0)`)
+      .call(d3.axisRight(yRight).ticks(5).tickFormat((v) => `${v}${props.lineUnit}`))
+      .selectAll("text")
+      .attr("fill", "#94a3b8");
+    svg.selectAll(".domain, .tick line").attr("stroke", "#334155");
+    const line = d3
+      .line()
+      .x((d) => x(d.date) + x.bandwidth() / 2)
+      .y((d) => yRight(d.value));
+    svg
+      .append("path")
+      .datum(lineData)
+      .attr("class", "line-overlay")
+      .attr("fill", "none")
+      .attr("stroke", props.lineColor)
+      .attr("stroke-width", 2)
+      .attr("d", line);
+    svg
+      .selectAll("circle.line-dot")
+      .data(lineData)
+      .join("circle")
+      .attr("class", "line-dot")
+      .attr("cx", (d) => x(d.date) + x.bandwidth() / 2)
+      .attr("cy", (d) => yRight(d.value))
+      .attr("r", 3)
+      .attr("fill", props.lineColor)
+      .style("pointer-events", "none");
+  }
+
   svg
     .selectAll("rect.hit")
     .data(data)
@@ -167,7 +212,7 @@ function render() {
 
 const { root, width } = useChartResize(render);
 
-watch(() => props.points, () => render(), { deep: true });
+watch(() => [props.points, props.linePoints], () => render(), { deep: true });
 </script>
 
 <template>
