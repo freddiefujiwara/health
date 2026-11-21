@@ -3,12 +3,22 @@ import { computed } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import LineChart from "@/components/LineChart.vue";
 import { formatDecimal, formatInteger } from "@/domain/format";
+import { bodyCompositionChanges } from "@/domain/stats";
 
 const { data } = useHealthData();
 
 const body = computed(() => data.value?.bodyComposition ?? []);
 const tanita = computed(() => body.value.filter((row) => row.measurementType === "TANITA"));
 const rowsDesc = computed(() => [...body.value].reverse());
+
+const changes = computed(() => bodyCompositionChanges(tanita.value));
+const deltaText = (c) => {
+  if (c.delta === 0) {
+    return "前回と同じ";
+  }
+  const sign = c.delta > 0 ? "+" : "−";
+  return `前回比 ${sign}${formatDecimal(Math.abs(c.delta), c.digits)}${c.unit ? ` ${c.unit}` : ""}`;
+};
 
 const weightPoints = computed(() => tanita.value.map((r) => ({ date: r.date, value: r.weightKg })));
 const fatPoints = computed(() => tanita.value.map((r) => ({ date: r.date, value: r.bodyFatPercent })));
@@ -29,6 +39,21 @@ const latestSegments = computed(() =>
 
 <template>
   <div v-if="data">
+    <section v-if="changes" class="chart-card changes-card">
+      <h2 class="section-title">前回からの変化（{{ changes.previousDate }} → {{ changes.date }}）</h2>
+      <div class="change-grid">
+        <div v-for="c in changes.changes" :key="c.key" class="change-item">
+          <div class="change-label">{{ c.label }}</div>
+          <div class="change-value">
+            <span :class="{ 'amount-value': c.masked }">{{ formatDecimal(c.current, c.digits) }}{{ c.unit ? ` ${c.unit}` : "" }}</span>
+          </div>
+          <div class="change-delta" :class="`tone-${c.tone}`">
+            <span :class="{ 'amount-value': c.masked }">{{ deltaText(c) }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="chart-grid">
       <section class="chart-card">
         <h2 class="section-title">体重（kg）</h2>
@@ -89,3 +114,40 @@ const latestSegments = computed(() =>
     </section>
   </div>
 </template>
+
+<style scoped>
+.changes-card {
+  margin-bottom: 16px;
+}
+.change-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.change-item {
+  background: var(--hatch-widget-surface-muted, rgba(148, 163, 184, 0.08));
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.change-label {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.change-value {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 2px 0;
+}
+.change-delta {
+  font-size: 12px;
+}
+.tone-good {
+  color: #22c55e;
+}
+.tone-warn {
+  color: #f59e0b;
+}
+.tone-flat {
+  opacity: 0.65;
+}
+</style>
