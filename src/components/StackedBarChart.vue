@@ -129,9 +129,9 @@ function render() {
         svg
           .append("text")
           .attr("class", "amount-value segment-label")
-          .attr("x", x(d.date) + x.bandwidth() / 2)
+          .attr("x", x(d.date) + 6)
           .attr("y", (yTop + yBottom) / 2 + 3)
-          .attr("text-anchor", "middle")
+          .attr("text-anchor", "start")
           .attr("fill", seg.textColor)
           .attr("font-size", 10)
           .style("pointer-events", "none")
@@ -175,6 +175,15 @@ function render() {
     svg
       .append("path")
       .datum(lineData)
+      .attr("class", "line-halo")
+      .attr("fill", "none")
+      .attr("stroke", "#0b1120")
+      .attr("stroke-width", 5)
+      .attr("opacity", 0.55)
+      .attr("d", line);
+    svg
+      .append("path")
+      .datum(lineData)
       .attr("class", "line-overlay")
       .attr("fill", "none")
       .attr("stroke", props.lineColor)
@@ -187,9 +196,27 @@ function render() {
       .attr("class", "line-dot")
       .attr("cx", (d) => x(d.date) + x.bandwidth() / 2)
       .attr("cy", (d) => yRight(d.value))
-      .attr("r", 3)
+      .attr("r", 3.5)
       .attr("fill", props.lineColor)
+      .attr("stroke", "#0b1120")
+      .attr("stroke-width", 1.5)
       .style("pointer-events", "none");
+    svg
+      .selectAll("text.line-value")
+      .data(lineData)
+      .join("text")
+      .attr("class", "line-value")
+      .attr("x", (d) => x(d.date) + x.bandwidth() / 2)
+      .attr("y", (d) => yRight(d.value) - 9)
+      .attr("text-anchor", "middle")
+      .attr("fill", props.lineColor)
+      .attr("font-size", 10.5)
+      .attr("font-weight", 600)
+      .style("paint-order", "stroke")
+      .style("stroke", "#0b1120")
+      .style("stroke-width", "3px")
+      .style("pointer-events", "none")
+      .text((d) => `${formatDecimal(d.value)}${props.lineUnit}`);
   }
 
   svg
