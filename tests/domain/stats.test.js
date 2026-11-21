@@ -17,6 +17,7 @@ import {
   sum,
   trendLinePoints,
   weekdayIntakeAverages,
+  weightComposition,
   weeklyBalanceProjection,
 } from "../../src/domain/stats";
 
@@ -401,5 +402,29 @@ describe("bodyCompositionChanges", () => {
     expect(result.changes.map((c) => c.key)).toEqual(["weightKg", "muscleMassKg"]);
     expect(result.changes[0]).toMatchObject({ delta: 1, tone: "warn" });
     expect(result.changes[1]).toMatchObject({ delta: 1.5, tone: "good" });
+  });
+});
+
+describe("weightComposition", () => {
+  it("splits each measurement into fat, muscle and other", () => {
+    const rows = [
+      { date: "2026-07-25", weightKg: 99.7, fatMassKg: 34.5, muscleMassKg: 61.8, leanMassKg: 65.2 },
+      { date: "2026-11-21", weightKg: 88.9, fatMassKg: 26.1, muscleMassKg: 59.6, leanMassKg: 62.8 },
+    ];
+    expect(weightComposition(rows)).toEqual([
+      { date: "2026-07-25", totalKg: 99.7, fatKg: 34.5, muscleKg: 61.8, otherKg: 3.4 },
+      { date: "2026-11-21", totalKg: 88.9, fatKg: 26.1, muscleKg: 59.6, otherKg: 3.2 },
+    ]);
+  });
+
+  it("skips rows missing any part and tolerates empty input", () => {
+    expect(weightComposition([])).toEqual([]);
+    expect(weightComposition(null)).toEqual([]);
+    expect(
+      weightComposition([
+        { date: "2026-01-01", weightKg: 90, fatMassKg: 30, muscleMassKg: 55 },
+        { date: "2026-02-01", weightKg: 89, fatMassKg: 29, muscleMassKg: 55, leanMassKg: 60 },
+      ]),
+    ).toEqual([{ date: "2026-02-01", totalKg: 89, fatKg: 29, muscleKg: 55, otherKg: 5 }]);
   });
 });

@@ -364,3 +364,27 @@ export function bodyCompositionChanges(rows) {
   }
   return { date: latest.date, previousDate: previous.date, changes };
 }
+
+// Weight split into its composition for one measurement: fat mass,
+// muscle mass, and everything else in lean mass (water, protein,
+// bone). The three parts add up to the measured weight, so a stacked
+// bar per measurement shows whether a weight change came from fat or
+// from muscle. Rows missing any part are skipped.
+export function weightComposition(rows) {
+  return (rows ?? [])
+    .filter(
+      (r) =>
+        r &&
+        Number.isFinite(r.weightKg) &&
+        Number.isFinite(r.fatMassKg) &&
+        Number.isFinite(r.muscleMassKg) &&
+        Number.isFinite(r.leanMassKg),
+    )
+    .map((r) => ({
+      date: r.date,
+      totalKg: r.weightKg,
+      fatKg: r.fatMassKg,
+      muscleKg: r.muscleMassKg,
+      otherKg: Math.round((r.leanMassKg - r.muscleMassKg) * 10) / 10,
+    }));
+}
