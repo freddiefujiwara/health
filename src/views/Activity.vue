@@ -28,6 +28,14 @@ const points = computed(() => {
   return recentRows(rows, 30);
 });
 
+const workHours = computed(() => data.value?.workHours ?? []);
+const workHoursDesc = computed(() => [...workHours.value].reverse().slice(0, 14));
+const confirmedWork = computed(() =>
+  workHours.value.filter((r) => r.status === "確定" && r.netWorkMinutes !== null),
+);
+const workAvg7 = computed(() => average(recentRows(confirmedWork.value, 7).map((r) => r.netWorkMinutes)));
+const workAvg30 = computed(() => average(recentRows(confirmedWork.value, 30).map((r) => r.netWorkMinutes)));
+
 const hours = computed(() => data.value?.chatActivityHours ?? []);
 const dailyHours = computed(() => data.value?.chatActivityDailyHours ?? []);
 const hourView = ref("total");
@@ -173,6 +181,28 @@ const cards = computed(() => [
             <td data-label="活動時間">{{ formatDurationMinutes(row.activityMinutes) }}</td>
             <td data-label="睡眠時間">{{ row.sleepMinutes === null ? "-" : formatDurationMinutes(row.sleepMinutes) }}</td>
             <td data-label="深夜帯活動時間">{{ formatDurationMinutes(row.lateNightMinutes) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="table-wrap" v-if="workHours.length">
+      <h2 class="section-title">勤務時間</h2>
+      <p class="meta">
+        確定した日の平均：直近7日 {{ workAvg7 === null ? "-" : formatDurationMinutes(workAvg7) }}／直近30日
+        {{ workAvg30 === null ? "-" : formatDurationMinutes(workAvg30) }}。職場の出退記録（presence）から計算しています。未確定の日は平均に入れていません。
+      </p>
+      <table class="stack-table">
+        <thead>
+          <tr><th>日付</th><th>勤務時間</th><th>出社</th><th>退社</th><th>状態</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in workHoursDesc" :key="row.date">
+            <td data-label="日付">{{ row.date }}</td>
+            <td data-label="勤務時間">{{ row.netWorkMinutes === null ? "-" : formatDurationMinutes(row.netWorkMinutes) }}</td>
+            <td data-label="出社">{{ row.firstArrive || "-" }}</td>
+            <td data-label="退社">{{ row.lastLeave || "-" }}</td>
+            <td data-label="状態">{{ row.status }}</td>
           </tr>
         </tbody>
       </table>
