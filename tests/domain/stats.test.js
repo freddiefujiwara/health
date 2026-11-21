@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addDays,
   average,
+  bodyCompositionChanges,
   daysToGoalWeight,
   empiricalKcalPerKg,
   firstOf,
@@ -357,5 +358,48 @@ describe("weekdayIntakeAverages", () => {
     const result = weekdayIntakeAverages(null);
     expect(result).toHaveLength(7);
     expect(result.every((e) => e.count === 0 && e.averageIntakeKcal === null)).toBe(true);
+  });
+});
+
+describe("bodyCompositionChanges", () => {
+  const oct = {
+    date: "2026-10-17", weightKg: 91.5, fatMassKg: 26.2, muscleMassKg: 61.9,
+    bodyWaterKg: 50.5, leanMassKg: 65.3, bodyFatPercent: 28.6, visceralFatLevel: 17, smi: 10.81,
+  };
+  const nov = {
+    date: "2026-11-21", weightKg: 88.9, fatMassKg: 26.1, muscleMassKg: 59.6,
+    bodyWaterKg: 45.9, leanMassKg: 62.8, bodyFatPercent: 29.4, visceralFatLevel: 17, smi: 9.99,
+  };
+
+  it("returns null without two measurements", () => {
+    expect(bodyCompositionChanges([])).toBeNull();
+    expect(bodyCompositionChanges(null)).toBeNull();
+    expect(bodyCompositionChanges([oct])).toBeNull();
+    expect(bodyCompositionChanges([oct, { date: "2026-11-01" }])).toBeNull();
+  });
+
+  it("reports deltas and tones for the latest pair", () => {
+    const result = bodyCompositionChanges([oct, nov]);
+    expect(result.date).toBe("2026-11-21");
+    expect(result.previousDate).toBe("2026-10-17");
+    const byKey = Object.fromEntries(result.changes.map((c) => [c.key, c]));
+    expect(byKey.weightKg).toMatchObject({ current: 88.9, delta: -2.6, tone: "good" });
+    expect(byKey.fatMassKg).toMatchObject({ current: 26.1, delta: -0.1, tone: "good" });
+    expect(byKey.muscleMassKg).toMatchObject({ current: 59.6, delta: -2.3, tone: "warn" });
+    expect(byKey.bodyWaterKg).toMatchObject({ current: 45.9, delta: -4.6, tone: "warn" });
+    expect(byKey.leanMassKg).toMatchObject({ delta: -2.5, tone: "warn" });
+    expect(byKey.bodyFatPercent).toMatchObject({ delta: 0.8, tone: "warn" });
+    expect(byKey.visceralFatLevel).toMatchObject({ delta: 0, tone: "flat" });
+    expect(byKey.smi).toMatchObject({ delta: -0.82, tone: "warn" });
+  });
+
+  it("marks an increase in muscle as good and skips missing metrics", () => {
+    const result = bodyCompositionChanges([
+      { date: "2026-01-01", weightKg: 90, muscleMassKg: 60 },
+      { date: "2026-02-01", weightKg: 91, muscleMassKg: 61.5 },
+    ]);
+    expect(result.changes.map((c) => c.key)).toEqual(["weightKg", "muscleMassKg"]);
+    expect(result.changes[0]).toMatchObject({ delta: 1, tone: "warn" });
+    expect(result.changes[1]).toMatchObject({ delta: 1.5, tone: "good" });
   });
 });

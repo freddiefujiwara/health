@@ -321,3 +321,46 @@ export function projectionPoints(latest, avgDailyBalanceKcal, horizonDays = 90, 
   }
   return points;
 }
+
+// Metrics compared between the two most recent measurements, in
+// display order. downIsGood drives the tone: for fat-related metrics a
+// decrease is progress, for muscle / water / SMI a decrease is a
+// warning. masked metrics carry kg amounts, which privacy mode hides
+// like the other amount values on the page.
+const BODY_CHANGE_METRICS = [
+  { key: "weightKg", label: "体重", unit: "kg", digits: 1, downIsGood: true, masked: true },
+  { key: "fatMassKg", label: "脂肪量", unit: "kg", digits: 1, downIsGood: true, masked: true },
+  { key: "muscleMassKg", label: "筋肉量", unit: "kg", digits: 1, downIsGood: false, masked: true },
+  { key: "bodyWaterKg", label: "体水分量", unit: "kg", digits: 1, downIsGood: false, masked: true },
+  { key: "leanMassKg", label: "除脂肪量", unit: "kg", digits: 1, downIsGood: false, masked: true },
+  { key: "bodyFatPercent", label: "体脂肪率", unit: "%", digits: 1, downIsGood: true, masked: false },
+  { key: "visceralFatLevel", label: "内臓脂肪レベル", unit: "", digits: 0, downIsGood: true, masked: false },
+  { key: "smi", label: "SMI", unit: "", digits: 2, downIsGood: false, masked: false },
+];
+
+// Change from the previous measurement to the latest one, so the
+// story of a single measurement ("fat flat, muscle and water down")
+// is visible at a glance. Rows without a finite weight do not count
+// as measurements. Returns null when fewer than two measurements
+// exist; metrics missing on either side are skipped.
+export function bodyCompositionChanges(rows) {
+  const measured = (rows ?? []).filter((r) => r && Number.isFinite(r.weightKg));
+  if (measured.length < 2) {
+    return null;
+  }
+  const latest = measured[measured.length - 1];
+  const previous = measured[measured.length - 2];
+  const changes = [];
+  for (const metric of BODY_CHANGE_METRICS) {
+    const current = latest[metric.key];
+    const before = previous[metric.key];
+    if (!Number.isFinite(current) || !Number.isFinite(before)) {
+      continue;
+    }
+    const factor = 10 ** metric.digits;
+    const delta = Math.round((current - before) * factor) / factor;
+    const tone = delta === 0 ? "flat" : (delta < 0) === metric.downIsGood ? "good" : "warn";
+    changes.push({ ...metric, current, delta, tone });
+  }
+  return { date: latest.date, previousDate: previous.date, changes };
+}
