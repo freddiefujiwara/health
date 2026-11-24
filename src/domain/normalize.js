@@ -233,6 +233,20 @@ function normalizeHomeHours(rows) {
     .sort(byDateAsc);
 }
 
+function normalizeHomeSegments(rows) {
+  return rows
+    .filter((row) => row && row.date)
+    .map((row) => ({
+      date: toText(row.date).slice(0, 10),
+      startMinute: toNumber(row.start_minute),
+      endMinute: toNumber(row.end_minute),
+      state: toText(row.state),
+      minutes: toNumber(row.minutes),
+    }))
+    .sort((a, b) => a.startMinute - b.startMinute)
+    .sort(byDateAsc);
+}
+
 function normalizeGoals(rows) {
   const goals = {
     startWeightKg: null,
@@ -295,6 +309,7 @@ export function normalizeHealth(payload) {
     sleepEstimates: normalizeSleepEstimates(asRows(source.sleep_estimates)),
     workHours: normalizeWorkHours(asRows(source.work_hours)),
     homeHours: normalizeHomeHours(asRows(source.home_hours)),
+    homeSegments: normalizeHomeSegments(asRows(source.home_segments)),
     goals: normalizeGoals(asRows(source.goals_settings)),
   };
 }

@@ -44,6 +44,23 @@ const confirmedHome = computed(() =>
 const homeAvg7 = computed(() => average(recentRows(confirmedHome.value, 7).map((r) => r.homeMinutes)));
 const homeAvg30 = computed(() => average(recentRows(confirmedHome.value, 30).map((r) => r.homeMinutes)));
 
+const homeSegments = computed(() => data.value?.homeSegments ?? []);
+const homeTimelineDays = computed(() => {
+  const byDate = new Map();
+  homeSegments.value.forEach((seg) => {
+    if (!byDate.has(seg.date)) {
+      byDate.set(seg.date, []);
+    }
+    byDate.get(seg.date).push(seg);
+  });
+  return [...byDate.entries()]
+    .map(([date, segments]) => ({ date, segments }))
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 7);
+});
+const formatMinuteOfDay = (minute) =>
+  `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+
 const hours = computed(() => data.value?.chatActivityHours ?? []);
 const dailyHours = computed(() => data.value?.chatActivityDailyHours ?? []);
 const hourView = ref("total");
@@ -237,11 +254,44 @@ const cards = computed(() => [
           </tr>
         </tbody>
       </table>
+      <div v-if="homeTimelineDays.length" class="home-timeline">
+        <h3 class="subsection-title">在宅・外出の時系列（直近7日）</h3>
+        <ul class="timeline-list">
+          <li v-for="day in homeTimelineDays" :key="day.date">
+            <span class="timeline-date">{{ formatDateWithWeekday(day.date) }}</span>
+            <span class="timeline-segs"><template v-for="(seg, i) in day.segments" :key="i"><span v-if="i"> → </span>{{ formatMinuteOfDay(seg.startMinute) }}–{{ formatMinuteOfDay(seg.endMinute) }} {{ seg.state === "home" ? "家" : "外出" }}（{{ formatDurationMinutes(seg.minutes) }}）</template></span>
+          </li>
+        </ul>
+      </div>
     </section>
   </div>
 </template>
 
 <style scoped>
+.subsection-title {
+  font-size: 15px;
+  margin: 18px 0 8px;
+}
+
+.timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.timeline-date {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.timeline-segs {
+  display: block;
+  line-height: 1.7;
+}
+
 .hour-nav {
   display: flex;
   align-items: center;

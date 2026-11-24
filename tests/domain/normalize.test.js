@@ -152,6 +152,29 @@ describe("normalizeHealth work hours", () => {
   });
 });
 
+describe("normalizeHealth home segments", () => {
+  it("types home_segments rows and sorts them by date then start minute", () => {
+    const result = normalizeHealth({
+      home_segments: [
+        { date: "2026-11-21", start_minute: 536, end_minute: 772, state: "out", minutes: 236 },
+        { date: "2026-11-21T00:00:00+09:00", start_minute: 0, end_minute: 536, state: "home", minutes: 536 },
+        { date: "2026-11-20", start_minute: 0, end_minute: 1440, state: "home", minutes: 1440 },
+        { start_minute: 10, end_minute: 20, state: "home", minutes: 10 },
+      ],
+    });
+    expect(result.homeSegments.map((r) => `${r.date} ${r.startMinute}`)).toEqual([
+      "2026-11-20 0",
+      "2026-11-21 0",
+      "2026-11-21 536",
+    ]);
+    expect(result.homeSegments[2].state).toBe("out");
+  });
+
+  it("reads a missing home_segments sheet as empty", () => {
+    expect(normalizeHealth({}).homeSegments).toEqual([]);
+  });
+});
+
 describe("normalizeHealth home hours", () => {
   it("types home_hours rows and sorts them by date", () => {
     const result = normalizeHealth({
