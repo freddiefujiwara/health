@@ -82,7 +82,7 @@ describe("activity view", () => {
     expect(wrapper.text()).toContain("19:30");
   });
 
-  it("renders the home timeline when home_segments rows exist", async () => {
+  it("renders segment rows inside the home hours table", async () => {
     const pinia = createPinia();
     const store = useHealthStore(pinia);
     store.data = normalizeHealth({
@@ -98,11 +98,12 @@ describe("activity view", () => {
     store.source = "live";
     const wrapper = mount(Activity, { global: { plugins: [pinia] } });
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain("在宅・外出の時系列");
-    expect(wrapper.text()).toContain("00:00–08:56 家");
-    expect(wrapper.text()).toContain("08:56–12:52 外出");
+    expect(wrapper.text()).not.toContain("在宅・外出の時系列");
+    expect(wrapper.text()).toContain("00:00–08:56");
+    expect(wrapper.text()).toContain("08:56–12:52");
     expect(wrapper.text()).toContain("24:00");
-    expect(wrapper.findAll(".timeline-segs li")).toHaveLength(3);
+    expect(wrapper.findAll(".segment-row")).toHaveLength(3);
+    expect(wrapper.findAll(".segment-row")[1].text()).toContain("外出");
   });
 
   it("joins sleep and late-night minutes into the daily table by date", async () => {
