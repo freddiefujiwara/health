@@ -45,7 +45,7 @@ const homeAvg7 = computed(() => average(recentRows(confirmedHome.value, 7).map((
 const homeAvg30 = computed(() => average(recentRows(confirmedHome.value, 30).map((r) => r.homeMinutes)));
 
 const homeSegments = computed(() => data.value?.homeSegments ?? []);
-const homeTimelineDays = computed(() => {
+const segmentsByDate = computed(() => {
   const byDate = new Map();
   homeSegments.value.forEach((seg) => {
     if (!byDate.has(seg.date)) {
@@ -53,10 +53,7 @@ const homeTimelineDays = computed(() => {
     }
     byDate.get(seg.date).push(seg);
   });
-  return [...byDate.entries()]
-    .map(([date, segments]) => ({ date, segments }))
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-    .slice(0, 7);
+  return byDate;
 });
 const formatMinuteOfDay = (minute) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
@@ -244,61 +241,36 @@ const cards = computed(() => [
           <tr><th>日付</th><th>在宅時間</th><th>最初の外出</th><th>最後の帰宅</th><th>外出回数</th><th>状態</th></tr>
         </thead>
         <tbody>
-          <tr v-for="row in homeHoursDesc" :key="row.date">
-            <td data-label="日付">{{ row.date }}</td>
-            <td data-label="在宅時間">{{ row.homeMinutes === null ? "-" : formatDurationMinutes(row.homeMinutes) }}</td>
-            <td data-label="最初の外出">{{ row.firstLeave || "-" }}</td>
-            <td data-label="最後の帰宅">{{ row.lastArrive || "-" }}</td>
-            <td data-label="外出回数">{{ row.outingCount === null ? "-" : row.outingCount }}</td>
-            <td data-label="状態">{{ row.status }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-if="homeTimelineDays.length" class="home-timeline">
-        <h3 class="subsection-title">在宅・外出の時系列（直近7日）</h3>
-        <ul class="timeline-list">
-          <li v-for="day in homeTimelineDays" :key="day.date">
-            <span class="timeline-date">{{ formatDateWithWeekday(day.date) }}</span>
-            <ul class="timeline-segs">
-              <li v-for="(seg, i) in day.segments" :key="i">
+          <template v-for="row in homeHoursDesc" :key="row.date">
+            <tr>
+              <td data-label="日付">{{ row.date }}</td>
+              <td data-label="在宅時間">{{ row.homeMinutes === null ? "-" : formatDurationMinutes(row.homeMinutes) }}</td>
+              <td data-label="最初の外出">{{ row.firstLeave || "-" }}</td>
+              <td data-label="最後の帰宅">{{ row.lastArrive || "-" }}</td>
+              <td data-label="外出回数">{{ row.outingCount === null ? "-" : row.outingCount }}</td>
+              <td data-label="状態">{{ row.status }}</td>
+            </tr>
+            <tr
+              v-for="(seg, i) in segmentsByDate.get(row.date) ?? []"
+              :key="`${row.date}-${i}`"
+              class="segment-row"
+            >
+              <td colspan="6" data-label="時間" class="segment-cell">
                 {{ formatMinuteOfDay(seg.startMinute) }}–{{ formatMinuteOfDay(seg.endMinute) }}
                 {{ seg.state === "home" ? "家" : "外出" }}（{{ formatDurationMinutes(seg.minutes) }}）
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
     </section>
   </div>
 </template>
 
 <style scoped>
-.subsection-title {
-  font-size: 15px;
-  margin: 18px 0 8px;
-}
-
-.timeline-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.timeline-date {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.timeline-segs {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 2px;
-  line-height: 1.7;
+.segment-cell {
+  color: var(--muted);
+  padding-left: 24px;
 }
 
 .hour-nav {
