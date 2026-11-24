@@ -291,6 +291,23 @@ describe("normalizeHealth lab results", () => {
     expect(result.chatActivityDailyHours[0].engagedMinutesEst).toBeNull();
   });
 
+  it("normalizes server late-night totals, dropping unusable rows", () => {
+    const result = normalizeHealth({
+      late_night_by_date: [
+        { date: "2026-11-20", late_night_minutes: 45 },
+        { date: "2026-08-23T00:00:00+09:00", late_night_minutes: "30" },
+        { date: "2026-11-21", late_night_minutes: "abc" },
+        { late_night_minutes: 10 },
+        null,
+      ],
+    });
+    expect(result.lateNightByDate).toEqual([
+      { date: "2026-08-23", minutes: 30 },
+      { date: "2026-11-20", minutes: 45 },
+    ]);
+    expect(normalizeHealth({}).lateNightByDate).toEqual([]);
+  });
+
   it("normalizes sleep estimates sorted by date", () => {
     const result = normalizeHealth({
       sleep_estimates: [

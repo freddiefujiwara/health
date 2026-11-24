@@ -540,3 +540,77 @@ describe("health store payload cache in share mode", () => {
     expect(store.shareExpiresAt).toBe("2026-12-02T07:56:00.000Z");
   });
 });
+
+describe("health store activity scope", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.restoreAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.stubGlobal("location", { hash: "" });
+  });
+
+  const activityPayload = {
+    chat_activity: [
+      { date: "2026-11-20", user_message_count: 120, engaged_minutes_est: 300 },
+    ],
+    late_night_by_date: [{ date: "2026-08-23", late_night_minutes: 90 }],
+  };
+
+  it("fetches the activity scope and marks the store scope", async () => {
+    const fetchMock = vi.fn(async () => okResponse(activityPayload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchActivity();
+    expect(fetchMock).toHaveBeenCalledWith(`${HEALTH_API_URL}?scope=activity`);
+    expect(store.dataScope).toBe("activity");
+    expect(store.source).toBe("live");
+    expect(store.data.lateNightByDate).toEqual([{ date: "2026-08-23", minutes: 90 }]);
+    const cached = JSON.parse(sessionStorage.getItem("health-payload-cache-v1"));
+    expect(cached.scope).toBe("activity");
+  });
+
+  it("does not fall back to the sample payload when the activity fetch fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("network down");
+      }),
+    );
+    const store = useHealthStore();
+    await store.fetchActivity();
+    expect(store.error).toBe("network down");
+    expect(store.data).toBeNull();
+    expect(store.dataScope).toBe("");
+    expect(store.source).toBe("");
+  });
+
+  it("keeps the scopes' caches apart", async () => {
+    sessionStorage.setItem(
+      "health-payload-cache-v1",
+      JSON.stringify({ mode: "google", scope: "activity", savedAt: Date.now(), payload: activityPayload }),
+    );
+    const fetchMock = vi.fn(async () => okResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchActivity();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.dataScope).toBe("activity");
+    await store.fetchHealth();
+    expect(fetchMock).toHaveBeenCalledWith(HEALTH_API_URL);
+    expect(store.dataScope).toBe("full");
+  });
+
+  it("treats a cache entry without a scope as the full payload", async () => {
+    sessionStorage.setItem(
+      "health-payload-cache-v1",
+      JSON.stringify({ mode: "google", savedAt: Date.now(), payload }),
+    );
+    const fetchMock = vi.fn(async () => okResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = useHealthStore();
+    await store.fetchHealth();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(store.dataScope).toBe("full");
+  });
+});

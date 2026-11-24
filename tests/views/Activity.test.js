@@ -256,6 +256,22 @@ describe("activity view tabs and line chart", () => {
     expect(bandLabels[0].text()).toBe("5時間45分");
   });
 
+  it("shows late-night minutes for old dates from the server totals", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    store.data = normalizeHealth({
+      chat_activity: [
+        { date: "2026-08-23", user_message_count: 50, engaged_minutes_est: 200, session_count: 2, late_night_message_count: 4 },
+      ],
+      late_night_by_date: [{ date: "2026-08-23", late_night_minutes: 90 }],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    const row = wrapper.findAll("tbody tr").find((r) => r.text().includes("2026-08-23"));
+    expect(row.text()).toContain("1時間30分");
+  });
+
   it("shows the out band on a day view but not on the total view", async () => {
     const pinia = createPinia();
     const store = useHealthStore(pinia);

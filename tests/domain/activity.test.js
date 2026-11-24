@@ -40,6 +40,26 @@ describe("lateNightMinutesByDate", () => {
   it("returns an empty map for no rows", () => {
     expect(lateNightMinutesByDate([]).size).toBe(0);
   });
+
+  it("seeds dates from server totals and lets hourly rows override them", () => {
+    const totals = [
+      { date: "2026-08-23", minutes: 90 },
+      { date: "2026-11-16", minutes: 999 },
+      { date: "2026-11-17", minutes: "90" },
+      { minutes: 10 },
+      null,
+    ];
+    const rows = [{ date: "2026-11-16", hour: 23, engagedMinutesEst: 30 }];
+    const map = lateNightMinutesByDate(rows, totals);
+    expect(map.get("2026-08-23")).toBe(90);
+    expect(map.get("2026-11-16")).toBe(30);
+    expect(map.has("2026-11-17")).toBe(false);
+    expect(map.size).toBe(2);
+  });
+
+  it("tolerates null server totals", () => {
+    expect(lateNightMinutesByDate([], null).size).toBe(0);
+  });
 });
 
 describe("sleepBandsForDay", () => {

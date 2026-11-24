@@ -16,7 +16,7 @@ const PAYLOAD_CACHE_FRESH_MS = 60 * 1000;
 // Never resurrect a payload older than this, even from a long-lived tab.
 const PAYLOAD_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
-function readPayloadCache(mode) {
+function readPayloadCache(mode, scope) {
   try {
     const raw = globalThis.sessionStorage?.getItem(PAYLOAD_CACHE_STORAGE_KEY);
     if (!raw) {
@@ -24,6 +24,9 @@ function readPayloadCache(mode) {
     }
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.mode !== mode || !parsed.payload) {
+      return null;
+    }
+    if ((parsed.scope ?? "full") !== scope) {
       return null;
     }
     if (Date.now() - parsed.savedAt > PAYLOAD_CACHE_MAX_AGE_MS) {
@@ -35,11 +38,11 @@ function readPayloadCache(mode) {
   }
 }
 
-function writePayloadCache(mode, payload) {
+function writePayloadCache(mode, payload, scope) {
   try {
     globalThis.sessionStorage?.setItem(
       PAYLOAD_CACHE_STORAGE_KEY,
-      JSON.stringify({ mode, savedAt: Date.now(), payload }),
+      JSON.stringify({ mode, scope, savedAt: Date.now(), payload }),
     );
   } catch {
     // Storage may be unavailable or full; caching is best-effort.
@@ -123,13 +126,18 @@ export const useHealthStore = defineStore("health", {
     error: "",
     source: "",
     rawResponse: null,
+    dataScope: "",
     shareMode: false,
     shareExpiresAt: "",
     hasSession: false,
     issuedShare: null,
   }),
   actions: {
-    async fetchHealth() {
+    async fetchActivity() {
+      await this.fetchHealth("activity");
+    },
+
+    async fetchHealth(scope = "full") {
       if (this.loading) {
         return;
       }
@@ -141,13 +149,18 @@ export const useHealthStore = defineStore("health", {
       const shareToken = sessionToken ? "" : getShareToken();
       this.shareMode = Boolean(shareToken);
       this.hasSession = Boolean(sessionToken);
-      const apiUrl = buildApiUrl({ session_token: sessionToken, share_token: shareToken });
+      const apiUrl = buildApiUrl({
+        session_token: sessionToken,
+        share_token: shareToken,
+        scope: scope === "activity" ? "activity" : "",
+      });
       const cacheMode = sessionToken ? "session" : shareToken ? "share" : "google";
-      const cached = readPayloadCache(cacheMode);
+      const cached = readPayloadCache(cacheMode, scope);
       if (cached) {
         this.rawResponse = cached.payload;
         this.shareExpiresAt = cached.payload?._share?.expires_at ?? "";
         this.data = normalizeHealth(cached.payload);
+        this.dataScope = scope;
         this.source = "live";
         if (Date.now() - cached.savedAt < PAYLOAD_CACHE_FRESH_MS) {
           this.loading = false;
@@ -179,14 +192,16 @@ export const useHealthStore = defineStore("health", {
         this.rawResponse = json;
         this.shareExpiresAt = json?._share?.expires_at ?? "";
         this.data = normalizeHealth(json);
+        this.dataScope = scope;
         this.source = "live";
-        writePayloadCache(cacheMode, json);
+        writePayloadCache(cacheMode, json, scope);
       } catch (error) {
         const message = error?.message ?? "unknown error";
         if (message.startsWith("AUTH ")) {
           clearPayloadCache();
           this.error = message;
           this.data = null;
+          this.dataScope = "";
           this.source = "";
           this.rawResponse = null;
           return;
@@ -210,6 +225,17 @@ export const useHealthStore = defineStore("health", {
         if (sessionToken && isCorsError) {
           this.error = "CORS blocked API request. Ensure GAS doGet returns Access-Control-Allow-Origin.";
           this.data = null;
+          this.source = "";
+          this.rawResponse = null;
+          return;
+        }
+
+        if (scope === "activity") {
+          // The sample payload has no meaningful activity scope; surface
+          // the error instead of falling back to it.
+          this.error = message;
+          this.data = null;
+          this.dataScope = "";
           this.source = "";
           this.rawResponse = null;
           return;

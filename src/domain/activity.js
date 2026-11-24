@@ -5,8 +5,17 @@ import { formatDurationMinutes } from "./format";
 const LATE_NIGHT_HOURS = [23, 0, 1, 2, 3, 4];
 
 /** Minutes of late-night activity per calendar date, as a Map. */
-export function lateNightMinutesByDate(dailyHourRows) {
+export function lateNightMinutesByDate(dailyHourRows, serverTotals = []) {
   const map = new Map();
+  // Server-computed totals cover the whole history; the hourly rows
+  // (which may only span a recent window) override the dates they cover.
+  for (const row of serverTotals ?? []) {
+    if (!row || !row.date || !Number.isFinite(row.minutes)) {
+      continue;
+    }
+    map.set(row.date, row.minutes);
+  }
+  const rowTotals = new Map();
   for (const row of dailyHourRows ?? []) {
     if (!row || !LATE_NIGHT_HOURS.includes(row.hour)) {
       continue;
@@ -14,7 +23,10 @@ export function lateNightMinutesByDate(dailyHourRows) {
     // A non-numeric estimate counts as 0: adding it raw would
     // concatenate strings into the total or throw on odd objects.
     const minutes = Number.isFinite(row.engagedMinutesEst) ? row.engagedMinutesEst : 0;
-    map.set(row.date, (map.get(row.date) ?? 0) + minutes);
+    rowTotals.set(row.date, (rowTotals.get(row.date) ?? 0) + minutes);
+  }
+  for (const [date, minutes] of rowTotals) {
+    map.set(date, minutes);
   }
   return map;
 }
