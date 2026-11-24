@@ -143,6 +143,25 @@ describe("normalizeHealth work hours", () => {
   });
 });
 
+describe("normalizeHealth home hours", () => {
+  it("types home_hours rows and sorts them by date", () => {
+    const result = normalizeHealth({
+      home_hours: [
+        { date: "2026-11-21", home_minutes: 565, status: "確定", first_leave: "04:55", last_arrive: "19:30", outing_count: 1 },
+        { date: "2026-11-20", home_minutes: "", status: "未確定", first_leave: "", last_arrive: "", outing_count: 0 },
+      ],
+    });
+    expect(result.homeHours.map((r) => r.date)).toEqual(["2026-11-20", "2026-11-21"]);
+    expect(result.homeHours[1].homeMinutes).toBe(565);
+    expect(result.homeHours[0].homeMinutes).toBeNull();
+    expect(result.homeHours[0].status).toBe("未確定");
+  });
+
+  it("reads a missing home_hours sheet as empty", () => {
+    expect(normalizeHealth({}).homeHours).toEqual([]);
+  });
+});
+
 describe("normalizeHealth lab results", () => {
   it("normalizes lab results with numeric conversion", () => {
     const result = normalizeHealth({
