@@ -36,6 +36,14 @@ const confirmedWork = computed(() =>
 const workAvg7 = computed(() => average(recentRows(confirmedWork.value, 7).map((r) => r.netWorkMinutes)));
 const workAvg30 = computed(() => average(recentRows(confirmedWork.value, 30).map((r) => r.netWorkMinutes)));
 
+const homeHours = computed(() => data.value?.homeHours ?? []);
+const homeHoursDesc = computed(() => [...homeHours.value].reverse().slice(0, 14));
+const confirmedHome = computed(() =>
+  homeHours.value.filter((r) => r.status === "確定" && r.homeMinutes !== null),
+);
+const homeAvg7 = computed(() => average(recentRows(confirmedHome.value, 7).map((r) => r.homeMinutes)));
+const homeAvg30 = computed(() => average(recentRows(confirmedHome.value, 30).map((r) => r.homeMinutes)));
+
 const hours = computed(() => data.value?.chatActivityHours ?? []);
 const dailyHours = computed(() => data.value?.chatActivityDailyHours ?? []);
 const hourView = ref("total");
@@ -202,6 +210,29 @@ const cards = computed(() => [
             <td data-label="勤務時間">{{ row.netWorkMinutes === null ? "-" : formatDurationMinutes(row.netWorkMinutes) }}</td>
             <td data-label="出社">{{ row.firstArrive || "-" }}</td>
             <td data-label="退社">{{ row.lastLeave || "-" }}</td>
+            <td data-label="状態">{{ row.status }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="table-wrap" v-if="homeHours.length">
+      <h2 class="section-title">家にいる時間</h2>
+      <p class="meta">
+        確定した日の平均：直近7日 {{ homeAvg7 === null ? "-" : formatDurationMinutes(homeAvg7) }}／直近30日
+        {{ homeAvg30 === null ? "-" : formatDurationMinutes(homeAvg30) }}。自宅の出入り記録（presence）から計算しています。未確定の日は平均に入れていません。
+      </p>
+      <table class="stack-table">
+        <thead>
+          <tr><th>日付</th><th>在宅時間</th><th>最初の外出</th><th>最後の帰宅</th><th>外出回数</th><th>状態</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in homeHoursDesc" :key="row.date">
+            <td data-label="日付">{{ row.date }}</td>
+            <td data-label="在宅時間">{{ row.homeMinutes === null ? "-" : formatDurationMinutes(row.homeMinutes) }}</td>
+            <td data-label="最初の外出">{{ row.firstLeave || "-" }}</td>
+            <td data-label="最後の帰宅">{{ row.lastArrive || "-" }}</td>
+            <td data-label="外出回数">{{ row.outingCount === null ? "-" : row.outingCount }}</td>
             <td data-label="状態">{{ row.status }}</td>
           </tr>
         </tbody>

@@ -219,6 +219,20 @@ function normalizeWorkHours(rows) {
     .sort(byDateAsc);
 }
 
+function normalizeHomeHours(rows) {
+  return rows
+    .filter((row) => row && row.date)
+    .map((row) => ({
+      date: toText(row.date),
+      homeMinutes: toNumber(row.home_minutes),
+      status: toText(row.status),
+      firstLeave: toText(row.first_leave),
+      lastArrive: toText(row.last_arrive),
+      outingCount: toNumber(row.outing_count),
+    }))
+    .sort(byDateAsc);
+}
+
 function normalizeGoals(rows) {
   const goals = {
     startWeightKg: null,
@@ -280,6 +294,7 @@ export function normalizeHealth(payload) {
     chatActivityDailyHours: normalizeChatActivityDailyHours(asRows(source.chat_activity_daily_hours)),
     sleepEstimates: normalizeSleepEstimates(asRows(source.sleep_estimates)),
     workHours: normalizeWorkHours(asRows(source.work_hours)),
+    homeHours: normalizeHomeHours(asRows(source.home_hours)),
     goals: normalizeGoals(asRows(source.goals_settings)),
   };
 }

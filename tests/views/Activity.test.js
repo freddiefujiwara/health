@@ -65,6 +65,23 @@ describe("activity view", () => {
     expect(wrapper.text()).toContain("18:30");
   });
 
+  it("renders the home hours section when home_hours rows exist", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    store.data = normalizeHealth({
+      home_hours: [
+        { date: "2026-11-20", home_minutes: "", status: "未確定", first_leave: "", last_arrive: "", outing_count: 0 },
+        { date: "2026-11-21", home_minutes: 565, status: "確定", first_leave: "04:55", last_arrive: "19:30", outing_count: 1 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("家にいる時間");
+    expect(wrapper.text()).toContain("9時間25分");
+    expect(wrapper.text()).toContain("19:30");
+  });
+
   it("joins sleep and late-night minutes into the daily table by date", async () => {
     const pinia = createPinia();
     const store = useHealthStore(pinia);
