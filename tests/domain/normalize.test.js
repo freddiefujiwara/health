@@ -138,6 +138,15 @@ describe("normalizeHealth work hours", () => {
     expect(result.workHours[0].status).toBe("未確定");
   });
 
+  it("trims an ISO timestamp date to YYYY-MM-DD", () => {
+    const result = normalizeHealth({
+      work_hours: [
+        { date: "2026-11-21T00:00:00+09:00", net_work_minutes: 570, status: "確定", first_arrive: "09:00", last_leave: "18:30", pair_count: 1 },
+      ],
+    });
+    expect(result.workHours[0].date).toBe("2026-11-21");
+  });
+
   it("reads a missing work_hours sheet as empty", () => {
     expect(normalizeHealth({}).workHours).toEqual([]);
   });
@@ -155,6 +164,15 @@ describe("normalizeHealth home hours", () => {
     expect(result.homeHours[1].homeMinutes).toBe(565);
     expect(result.homeHours[0].homeMinutes).toBeNull();
     expect(result.homeHours[0].status).toBe("未確定");
+  });
+
+  it("trims an ISO timestamp date to YYYY-MM-DD", () => {
+    const result = normalizeHealth({
+      home_hours: [
+        { date: "2026-11-21T00:00:00+09:00", home_minutes: 565, status: "確定", first_leave: "04:55", last_arrive: "19:30", outing_count: 1 },
+      ],
+    });
+    expect(result.homeHours[0].date).toBe("2026-11-21");
   });
 
   it("reads a missing home_hours sheet as empty", () => {
