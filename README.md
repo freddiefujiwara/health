@@ -12,12 +12,14 @@ Vue 3 + Vite + Pinia + vue-router + D3 の構成・デザインに揃えてい�
 - **体組成** (`/body`)：体重・体脂肪率・筋肉量の推移グラフ、TANITA測定履歴、部位別
 - **食事** (`/nutrition`)：直近30日の摂取・収支グラフ（摂取目安ライン付き）、期間集計、日別一覧
 - **歩数** (`/steps`)：直近30日の歩数グラフ、平均・合計、日別一覧
+- **検査** (`/labs`)：血液検査などの検査結果の推移
+- **活動** (`/activity`)：活動量・睡眠の推定、勤務時間と在宅時間の日次集計
 
 ダーク／ライトテーマ切替と、数値をぼかすプライバシーモード（asset と同じ仕様）を備えます。
 
 ## データ取得
 
-- 本番：health-gas の Web アプリ URL から `fetch` で取得（認証なし）
+- 本番：health-gas の Web アプリ URL から `fetch` で取得（Google サインインのオーナーセッション、または一時アクセスリンクの共有トークンで認証）
 - 取得に失敗した場合は `src/mocks/sampleApi.json`（スナップショット）にフォールバックし、
   その旨を表示します
 
@@ -26,8 +28,7 @@ Vue 3 + Vite + Pinia + vue-router + D3 の構成・デザインに揃えてい�
 ```bash
 npm install
 npm run dev        # 開発サーバ
-npm test           # vitest
-npm run test:coverage  # domain / stores はカバレッジ100%を維持
+npm test           # vitest（domain / stores はカバレッジ100%を維持）
 npm run build      # dist/ へビルド（base: /health/）
 ```
 
