@@ -102,6 +102,7 @@ describe("activity view", () => {
     expect(wrapper.text()).toContain("00:00–08:56 家");
     expect(wrapper.text()).toContain("08:56–12:52 外出");
     expect(wrapper.text()).toContain("24:00");
+    expect(wrapper.findAll(".timeline-segs li")).toHaveLength(3);
   });
 
   it("joins sleep and late-night minutes into the daily table by date", async () => {

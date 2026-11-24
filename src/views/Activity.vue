@@ -259,7 +259,12 @@ const cards = computed(() => [
         <ul class="timeline-list">
           <li v-for="day in homeTimelineDays" :key="day.date">
             <span class="timeline-date">{{ formatDateWithWeekday(day.date) }}</span>
-            <span class="timeline-segs"><template v-for="(seg, i) in day.segments" :key="i"><span v-if="i"> → </span>{{ formatMinuteOfDay(seg.startMinute) }}–{{ formatMinuteOfDay(seg.endMinute) }} {{ seg.state === "home" ? "家" : "外出" }}（{{ formatDurationMinutes(seg.minutes) }}）</template></span>
+            <ul class="timeline-segs">
+              <li v-for="(seg, i) in day.segments" :key="i">
+                {{ formatMinuteOfDay(seg.startMinute) }}–{{ formatMinuteOfDay(seg.endMinute) }}
+                {{ seg.state === "home" ? "家" : "外出" }}（{{ formatDurationMinutes(seg.minutes) }}）
+              </li>
+            </ul>
           </li>
         </ul>
       </div>
@@ -288,7 +293,11 @@ const cards = computed(() => [
 }
 
 .timeline-segs {
-  display: block;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
   line-height: 1.7;
 }
 
