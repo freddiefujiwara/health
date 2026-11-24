@@ -256,6 +256,35 @@ describe("activity view tabs and line chart", () => {
     expect(bandLabels[0].text()).toBe("5時間45分");
   });
 
+  it("shows the out band on a day view but not on the total view", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    const dailyHours = [];
+    for (let h = 0; h < 24; h += 1) {
+      dailyHours.push({ date: "2026-11-12", hour: h, user_message_count: h === 5 ? 28 : 0, engaged_minutes_est: 0 });
+    }
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_hours: [
+        { hour: 5, user_message_count: 426, engaged_minutes_est: 742 },
+      ],
+      chat_activity_daily_hours: dailyHours,
+      home_segments: [
+        { date: "2026-11-12", start_minute: 536, end_minute: 767, state: "out", minutes: 231 },
+        { date: "2026-11-12", start_minute: 0, end_minute: 536, state: "home", minutes: 536 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.findAll("rect.band")).toHaveLength(0);
+    await wrapper.find('button[aria-label="前の日"]').trigger("click");
+    const bands = wrapper.findAll("rect.band");
+    expect(bands).toHaveLength(1);
+    expect(bands[0].attributes("fill")).toBe("#38bdf8");
+    expect(wrapper.text()).toContain("水色の帯は外出していた区間です（08:56–12:47、3時間51分）");
+  });
+
   it("draws an interval that ends before midnight on the previous evening only", async () => {
     const pinia = createPinia();
     const store = useHealthStore(pinia);

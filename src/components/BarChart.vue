@@ -162,7 +162,7 @@ function render() {
       .attr("width", (b) => b.width)
       .attr("y", margin.top)
       .attr("height", h - margin.bottom - margin.top)
-      .attr("fill", "#8b5cf6")
+      .attr("fill", (b) => b.color || "#8b5cf6")
       .attr("opacity", 0.45);
   }
 
