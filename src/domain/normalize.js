@@ -193,6 +193,17 @@ function normalizeChatActivityDailyHours(rows) {
     .sort((a, b) => (a.date === b.date ? a.hour - b.hour : a.date < b.date ? -1 : 1));
 }
 
+function normalizeLateNightByDate(rows) {
+  return rows
+    .filter((row) => row && row.date)
+    .map((row) => ({
+      date: toText(row.date).slice(0, 10),
+      minutes: toNumber(row.late_night_minutes),
+    }))
+    .filter((row) => row.minutes !== null)
+    .sort(byDateAsc);
+}
+
 function normalizeSleepEstimates(rows) {
   return rows
     .filter((row) => row && row.date)
@@ -306,6 +317,7 @@ export function normalizeHealth(payload) {
     chatActivity: normalizeChatActivity(asRows(source.chat_activity)),
     chatActivityHours: normalizeChatActivityHours(asRows(source.chat_activity_hours)),
     chatActivityDailyHours: normalizeChatActivityDailyHours(asRows(source.chat_activity_daily_hours)),
+    lateNightByDate: normalizeLateNightByDate(asRows(source.late_night_by_date)),
     sleepEstimates: normalizeSleepEstimates(asRows(source.sleep_estimates)),
     workHours: normalizeWorkHours(asRows(source.work_hours)),
     homeHours: normalizeHomeHours(asRows(source.home_hours)),

@@ -11,7 +11,7 @@ import {
   sleepBandsForDay,
 } from "@/domain/activity";
 
-const { data } = useHealthData();
+const { data } = useHealthData("activity");
 
 const activity = computed(() => data.value?.chatActivity ?? []);
 const activityDesc = computed(() => [...activity.value].reverse());
@@ -121,7 +121,9 @@ const sleepAvgText = (days) =>
   formatDurationMinutes(average(sleep.value.slice(-days).map((r) => r.durationMinutesEst)));
 
 // Late-night activity minutes per date, summed from the hourly breakdown.
-const lateNightMinutesByDate = computed(() => computeLateNightMinutesByDate(dailyHours.value));
+const lateNightMinutesByDate = computed(() =>
+  computeLateNightMinutesByDate(dailyHours.value, data.value?.lateNightByDate ?? []),
+);
 const lateNightAvgText = (rows) =>
   formatDurationMinutes(
     average(rows.map((r) => lateNightMinutesByDate.value.get(r.date) ?? 0)),
