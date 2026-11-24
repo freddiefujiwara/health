@@ -209,7 +209,7 @@ function normalizeWorkHours(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
-      date: toText(row.date),
+      date: toText(row.date).slice(0, 10),
       netWorkMinutes: toNumber(row.net_work_minutes),
       status: toText(row.status),
       firstArrive: toText(row.first_arrive),
@@ -223,7 +223,7 @@ function normalizeHomeHours(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
-      date: toText(row.date),
+      date: toText(row.date).slice(0, 10),
       homeMinutes: toNumber(row.home_minutes),
       status: toText(row.status),
       firstLeave: toText(row.first_leave),
