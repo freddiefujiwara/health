@@ -81,6 +81,20 @@ describe("bar chart bands", () => {
     expect(Number(bands[1].attributes("x"))).toBeGreaterThan(Number(bands[0].attributes("x")));
   });
 
+  it("uses a band's own color when one is given", () => {
+    const wrapper = mount(BarChart, {
+      props: {
+        points: hourPoints,
+        unit: "回",
+        labelType: "plain",
+        bands: [{ from: 0, to: 4.25, color: "#38bdf8" }, { from: 20.5, to: 24 }],
+      },
+    });
+    const bands = wrapper.findAll("rect.band");
+    expect(bands[0].attributes("fill")).toBe("#38bdf8");
+    expect(bands[1].attributes("fill")).toBe("#8b5cf6");
+  });
+
   it("renders band labels on top of the bands", () => {
     const wrapper = mount(BarChart, {
       props: {

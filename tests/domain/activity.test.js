@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { lateNightMinutesByDate, sleepBandsForDay, timeToHours } from "../../src/domain/activity";
+import {
+  lateNightMinutesByDate,
+  outBandsForDay,
+  sleepBandsForDay,
+  timeToHours,
+} from "../../src/domain/activity";
 
 describe("timeToHours", () => {
   it("converts HH:MM to fractional hours", () => {
@@ -77,5 +82,49 @@ describe("sleepBandsForDay", () => {
     expect(sleepBandsForDay(rows, "2026-11-15").some((b) => b.note.includes("null"))).toBe(false);
     expect(sleepBandsForDay(rows, "2026-11-10")).toEqual([]);
     expect(sleepBandsForDay([], "2026-11-16")).toEqual([]);
+  });
+});
+
+describe("outBandsForDay", () => {
+  const seg = (over) => ({
+    date: "2026-11-23",
+    startMinute: 536,
+    endMinute: 767,
+    state: "out",
+    minutes: 231,
+    ...over,
+  });
+
+  it("converts an out segment into a sky band with a note", () => {
+    expect(outBandsForDay([seg({})], "2026-11-23")).toEqual([
+      {
+        from: 536 / 60,
+        to: 767 / 60,
+        label: "3時間51分",
+        note: "08:56–12:47、3時間51分",
+        color: "#38bdf8",
+      },
+    ]);
+  });
+
+  it("labels a band ending at midnight as 24:00", () => {
+    const bands = outBandsForDay([seg({ startMinute: 1300, endMinute: 1440 })], "2026-11-23");
+    expect(bands[0].note).toContain("24:00");
+  });
+
+  it("skips home segments, other days and malformed rows", () => {
+    expect(
+      outBandsForDay(
+        [
+          seg({ state: "home" }),
+          seg({ date: "2026-11-22" }),
+          seg({ startMinute: null }),
+          seg({ endMinute: undefined }),
+          null,
+        ],
+        "2026-11-23",
+      ),
+    ).toEqual([]);
+    expect(outBandsForDay(undefined, "2026-11-23")).toEqual([]);
   });
 });

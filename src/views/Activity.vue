@@ -5,7 +5,11 @@ import BarChart from "@/components/BarChart.vue";
 import LineChart from "@/components/LineChart.vue";
 import { formatDateWithWeekday, formatDurationMinutes, formatInteger } from "@/domain/format";
 import { average, movingAverage, recentRows } from "@/domain/stats";
-import { lateNightMinutesByDate as computeLateNightMinutesByDate, sleepBandsForDay } from "@/domain/activity";
+import {
+  lateNightMinutesByDate as computeLateNightMinutesByDate,
+  outBandsForDay,
+  sleepBandsForDay,
+} from "@/domain/activity";
 
 const { data } = useHealthData();
 
@@ -106,7 +110,10 @@ const hourMetaText = computed(() => {
   const bandNote = sleepBands.value.length
     ? `紫の帯は推定睡眠として数えた区間です（${sleepBands.value.map((b) => b.note).join("／")}）。`
     : "";
-  return `多い時間帯：${peakHoursText.value}。${label} の合計は ${formatInteger(total)} 回です。${bandNote}`;
+  const outNote = outBands.value.length
+    ? `水色の帯は外出していた区間です（${outBands.value.map((b) => b.note).join("／")}）。`
+    : "";
+  return `多い時間帯：${peakHoursText.value}。${label} の合計は ${formatInteger(total)} 回です。${bandNote}${outNote}`;
 });
 
 const sleep = computed(() => data.value?.sleepEstimates ?? []);
@@ -123,7 +130,10 @@ const lateNightAvgText = (rows) =>
 const sleepBands = computed(() =>
   activeHourKey.value === "total" ? [] : sleepBandsForDay(sleep.value, activeHourKey.value),
 );
-const hourBands = computed(() => sleepBands.value);
+const outBands = computed(() =>
+  activeHourKey.value === "total" ? [] : outBandsForDay(homeSegments.value, activeHourKey.value),
+);
+const hourBands = computed(() => [...sleepBands.value, ...outBands.value]);
 
 // Daily table rows: activity time, sleep time and late-night activity
 // time per date, joined from the three series by date.

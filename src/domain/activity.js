@@ -47,6 +47,37 @@ function dayDiff(from, to) {
  * therefore belongs entirely to the previous evening and must not leak
  * into the wake date's chart.
  */
+/** "08:56" style label for a minute-of-day value (1440 -> "24:00"). */
+function minuteOfDayLabel(minute) {
+  return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+}
+
+/**
+ * Out-of-home bands (in fractional hours) for one calendar day, from
+ * the day's home/out segments. Segments are already clipped to their
+ * day, so unlike sleep they never straddle midnight.
+ */
+export function outBandsForDay(segments, day) {
+  const result = [];
+  for (const seg of segments ?? []) {
+    if (!seg || seg.date !== day || seg.state !== "out") {
+      continue;
+    }
+    if (!Number.isFinite(seg.startMinute) || !Number.isFinite(seg.endMinute)) {
+      continue;
+    }
+    const minutes = seg.endMinute - seg.startMinute;
+    result.push({
+      from: seg.startMinute / 60,
+      to: seg.endMinute / 60,
+      label: formatDurationMinutes(minutes),
+      note: `${minuteOfDayLabel(seg.startMinute)}–${minuteOfDayLabel(seg.endMinute)}、${formatDurationMinutes(minutes)}`,
+      color: "#38bdf8",
+    });
+  }
+  return result;
+}
+
 export function sleepBandsForDay(sleepRows, day) {
   const result = [];
   for (const row of sleepRows ?? []) {
