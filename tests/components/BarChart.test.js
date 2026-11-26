@@ -109,6 +109,54 @@ describe("bar chart bands", () => {
     expect(labels[0].text()).toBe("5時間45分");
   });
 
+  it("staggers labels of neighbouring bands onto different rows", () => {
+    const wrapper = mount(BarChart, {
+      props: {
+        points: hourPoints,
+        unit: "回",
+        labelType: "plain",
+        bands: [
+          { from: 6, to: 7, label: "3時間46分" },
+          { from: 7, to: 8, label: "5時間20分" },
+        ],
+      },
+    });
+    const labels = wrapper.findAll("text.band-label");
+    expect(labels).toHaveLength(2);
+    expect(labels[0].attributes("y")).not.toBe(labels[1].attributes("y"));
+  });
+
+  it("drops a label that fits on no row instead of overlapping", () => {
+    const wrapper = mount(BarChart, {
+      props: {
+        points: hourPoints,
+        unit: "回",
+        labelType: "plain",
+        bands: [
+          { from: 6, to: 7, label: "3時間46分" },
+          { from: 6.2, to: 7.2, label: "5時間20分" },
+          { from: 6.4, to: 7.4, label: "15時間39分" },
+          { from: 6.6, to: 7.6, label: "9時間53分" },
+        ],
+      },
+    });
+    expect(wrapper.findAll("text.band-label").length).toBeLessThanOrEqual(3);
+  });
+
+  it("outlines band labels so they stay readable on light bands", () => {
+    const wrapper = mount(BarChart, {
+      props: {
+        points: hourPoints,
+        unit: "回",
+        labelType: "plain",
+        bands: [{ from: 0, to: 4.25, label: "5時間45分" }],
+      },
+    });
+    const label = wrapper.find("text.band-label");
+    expect(label.attributes("stroke")).toBeTruthy();
+    expect(label.attributes("style")).toContain("paint-order");
+  });
+
   it("renders no bands by default", () => {
     const wrapper = mount(BarChart, { props: { points: hourPoints, unit: "回", labelType: "plain" } });
     expect(wrapper.findAll("rect.band")).toHaveLength(0);
