@@ -175,6 +175,23 @@ describe("normalizeHealth home segments", () => {
   });
 });
 
+describe("normalizeHealth work segments", () => {
+  it("types work_segments rows like home segments", () => {
+    const result = normalizeHealth({
+      work_segments: [
+        { date: "2026-11-25", start_minute: 387, end_minute: 1005, state: "work", minutes: 618 },
+      ],
+    });
+    expect(result.workSegments).toEqual([
+      { date: "2026-11-25", startMinute: 387, endMinute: 1005, state: "work", minutes: 618 },
+    ]);
+  });
+
+  it("reads a missing work_segments sheet as empty", () => {
+    expect(normalizeHealth({}).workSegments).toEqual([]);
+  });
+});
+
 describe("normalizeHealth home hours", () => {
   it("types home_hours rows and sorts them by date", () => {
     const result = normalizeHealth({

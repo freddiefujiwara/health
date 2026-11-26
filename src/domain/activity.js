@@ -65,14 +65,14 @@ function minuteOfDayLabel(minute) {
 }
 
 /**
- * Out-of-home bands (in fractional hours) for one calendar day, from
- * the day's home/out segments. Segments are already clipped to their
- * day, so unlike sleep they never straddle midnight.
+ * Bands (in fractional hours) for one calendar day from day segments
+ * of one state. Segments are already clipped to their day, so unlike
+ * sleep they never straddle midnight.
  */
-export function outBandsForDay(segments, day) {
+function segmentBandsForDay(segments, day, state, color) {
   const result = [];
   for (const seg of segments ?? []) {
-    if (!seg || seg.date !== day || seg.state !== "out") {
+    if (!seg || seg.date !== day || seg.state !== state) {
       continue;
     }
     if (!Number.isFinite(seg.startMinute) || !Number.isFinite(seg.endMinute)) {
@@ -84,10 +84,20 @@ export function outBandsForDay(segments, day) {
       to: seg.endMinute / 60,
       label: formatDurationMinutes(minutes),
       note: `${minuteOfDayLabel(seg.startMinute)}–${minuteOfDayLabel(seg.endMinute)}、${formatDurationMinutes(minutes)}`,
-      color: "#38bdf8",
+      color,
     });
   }
   return result;
+}
+
+/** Out-of-home bands for one calendar day, from the home/out segments. */
+export function outBandsForDay(segments, day) {
+  return segmentBandsForDay(segments, day, "out", "#38bdf8");
+}
+
+/** At-work bands for one calendar day, from the work segments. */
+export function workBandsForDay(segments, day) {
+  return segmentBandsForDay(segments, day, "work", "#22c55e");
 }
 
 export function sleepBandsForDay(sleepRows, day) {
