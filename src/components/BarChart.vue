@@ -212,19 +212,47 @@ function render() {
     const plotRight = w - margin.right;
     const estimateWidth = (text) =>
       [...text].reduce((sum, ch) => sum + (ch.charCodeAt(0) > 255 ? 11 : 6.2), 0);
-    svg
-      .selectAll("text.band-label")
-      .data(bandLayout.filter((b) => b.label))
-      .join("text")
-      .attr("class", "band-label")
-      .attr("x", (b) => {
+    // Every label used to sit on the same baseline, so labels of bands that
+    // sit close together overlapped into an unreadable stack. Place each
+    // label on the first of up to three staggered rows where it clears the
+    // previous label on that row; a label that fits on no row is skipped
+    // (the caption under the chart lists every band). A dark outline keeps
+    // the near-white text readable on light band colors.
+    const LABEL_ROWS = 3;
+    const LABEL_GAP = 6;
+    const rowRightEdges = [];
+    const labelLayout = bandLayout
+      .filter((b) => b.label)
+      .map((b) => {
         const half = estimateWidth(b.label) / 2;
         const center = b.x + b.width / 2;
-        return Math.min(Math.max(center, plotLeft + half), plotRight - half);
+        const cx = Math.min(Math.max(center, plotLeft + half), plotRight - half);
+        return { ...b, cx, left: cx - half, right: cx + half };
       })
-      .attr("y", margin.top + 14)
+      .sort((a, b) => a.cx - b.cx)
+      .reduce((placed, item) => {
+        for (let row = 0; row < LABEL_ROWS; row += 1) {
+          if (rowRightEdges[row] === undefined || item.left >= rowRightEdges[row] + LABEL_GAP) {
+            rowRightEdges[row] = item.right;
+            placed.push({ ...item, row });
+            return placed;
+          }
+        }
+        return placed;
+      }, []);
+    svg
+      .selectAll("text.band-label")
+      .data(labelLayout)
+      .join("text")
+      .attr("class", "band-label")
+      .attr("x", (b) => b.cx)
+      .attr("y", (b) => margin.top + 14 + b.row * 16)
       .attr("text-anchor", "middle")
-      .attr("fill", "#ede9fe")
+      .attr("fill", "#f8fafc")
+      .attr("stroke", "rgba(2, 6, 23, 0.88)")
+      .attr("stroke-width", 3)
+      .attr("stroke-linejoin", "round")
+      .style("paint-order", "stroke")
       .attr("font-size", 11)
       .attr("font-weight", 700)
       .style("pointer-events", "none")
