@@ -9,6 +9,7 @@ import {
   lateNightMinutesByDate as computeLateNightMinutesByDate,
   outBandsForDay,
   sleepBandsForDay,
+  workBandsForDay,
 } from "@/domain/activity";
 
 const { data } = useHealthData("activity");
@@ -49,6 +50,7 @@ const homeAvg7 = computed(() => average(recentRows(confirmedHome.value, 7).map((
 const homeAvg30 = computed(() => average(recentRows(confirmedHome.value, 30).map((r) => r.homeMinutes)));
 
 const homeSegments = computed(() => data.value?.homeSegments ?? []);
+const workSegments = computed(() => data.value?.workSegments ?? []);
 const segmentsByDate = computed(() => {
   const byDate = new Map();
   homeSegments.value.forEach((seg) => {
@@ -113,7 +115,10 @@ const hourMetaText = computed(() => {
   const outNote = outBands.value.length
     ? `水色の帯は外出していた区間です（${outBands.value.map((b) => b.note).join("／")}）。`
     : "";
-  return `多い時間帯：${peakHoursText.value}。${label} の合計は ${formatInteger(total)} 回です。${bandNote}${outNote}`;
+  const workNote = workBands.value.length
+    ? `緑の帯は勤務していた区間です（${workBands.value.map((b) => b.note).join("／")}）。`
+    : "";
+  return `多い時間帯：${peakHoursText.value}。${label} の合計は ${formatInteger(total)} 回です。${bandNote}${outNote}${workNote}`;
 });
 
 const sleep = computed(() => data.value?.sleepEstimates ?? []);
@@ -135,7 +140,10 @@ const sleepBands = computed(() =>
 const outBands = computed(() =>
   activeHourKey.value === "total" ? [] : outBandsForDay(homeSegments.value, activeHourKey.value),
 );
-const hourBands = computed(() => [...sleepBands.value, ...outBands.value]);
+const workBands = computed(() =>
+  activeHourKey.value === "total" ? [] : workBandsForDay(workSegments.value, activeHourKey.value),
+);
+const hourBands = computed(() => [...sleepBands.value, ...outBands.value, ...workBands.value]);
 
 // Daily table rows: activity time, sleep time and late-night activity
 // time per date, joined from the three series by date.
@@ -156,6 +164,8 @@ const cards = computed(() => [
   { label: "直近30日 平均睡眠時間", value: sleepAvgText(30) },
   { label: "直近7日 深夜帯の活動時間", value: lateNightAvgText(last7.value) },
   { label: "直近30日 深夜帯の活動時間", value: lateNightAvgText(last30.value) },
+  { label: "直近7日 平均勤務時間", value: formatDurationMinutes(workAvg7.value) },
+  { label: "直近30日 平均勤務時間", value: formatDurationMinutes(workAvg30.value) },
 ]);
 </script>
 

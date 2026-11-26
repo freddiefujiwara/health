@@ -4,6 +4,7 @@ import {
   outBandsForDay,
   sleepBandsForDay,
   timeToHours,
+  workBandsForDay,
 } from "../../src/domain/activity";
 
 describe("timeToHours", () => {
@@ -146,5 +147,38 @@ describe("outBandsForDay", () => {
       ),
     ).toEqual([]);
     expect(outBandsForDay(undefined, "2026-11-23")).toEqual([]);
+  });
+});
+
+describe("workBandsForDay", () => {
+  const seg = (over) => ({
+    date: "2026-11-25",
+    startMinute: 387,
+    endMinute: 1005,
+    state: "work",
+    minutes: 618,
+    ...over,
+  });
+
+  it("converts a work segment into a green band with a note", () => {
+    expect(workBandsForDay([seg({})], "2026-11-25")).toEqual([
+      {
+        from: 387 / 60,
+        to: 1005 / 60,
+        label: "10時間18分",
+        note: "06:27–16:45、10時間18分",
+        color: "#22c55e",
+      },
+    ]);
+  });
+
+  it("skips other states, other days and malformed rows", () => {
+    expect(
+      workBandsForDay(
+        [seg({ state: "out" }), seg({ date: "2026-11-24" }), seg({ startMinute: null }), null],
+        "2026-11-25",
+      ),
+    ).toEqual([]);
+    expect(workBandsForDay(undefined, "2026-11-25")).toEqual([]);
   });
 });

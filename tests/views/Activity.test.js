@@ -63,6 +63,8 @@ describe("activity view", () => {
     expect(wrapper.text()).toContain("9時間30分");
     expect(wrapper.text()).toContain("未確定");
     expect(wrapper.text()).toContain("18:30");
+    expect(wrapper.text()).toContain("直近7日 平均勤務時間");
+    expect(wrapper.text()).toContain("直近30日 平均勤務時間");
   });
 
   it("renders the home hours section when home_hours rows exist", async () => {
@@ -406,5 +408,35 @@ describe("activity view sleep card", () => {
     const text = wrapper.text();
     expect(text.indexOf("時間帯別の活動量")).toBeGreaterThanOrEqual(0);
     expect(text.indexOf("時間帯別の活動量")).toBeLessThan(text.indexOf("睡眠時間（直近30日・7日移動平均）"));
+  });
+});
+
+describe("Activity work bands", () => {
+  it("shows the work band on a day view but not on the total view", async () => {
+    const pinia = createPinia();
+    const store = useHealthStore(pinia);
+    const dailyHours = [];
+    for (let h = 0; h < 24; h += 1) {
+      dailyHours.push({ date: "2026-11-12", hour: h, user_message_count: h === 5 ? 28 : 0, engaged_minutes_est: 0 });
+    }
+    store.data = normalizeHealth({
+      chat_activity: payload.chat_activity,
+      chat_activity_hours: [
+        { hour: 5, user_message_count: 426, engaged_minutes_est: 742 },
+      ],
+      chat_activity_daily_hours: dailyHours,
+      work_segments: [
+        { date: "2026-11-12", start_minute: 387, end_minute: 1005, state: "work", minutes: 618 },
+      ],
+    });
+    store.source = "live";
+    const wrapper = mount(Activity, { global: { plugins: [pinia] } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.findAll("rect.band")).toHaveLength(0);
+    await wrapper.find('button[aria-label="前の日"]').trigger("click");
+    const bands = wrapper.findAll("rect.band");
+    expect(bands).toHaveLength(1);
+    expect(bands[0].attributes("fill")).toBe("#22c55e");
+    expect(wrapper.text()).toContain("緑の帯は勤務していた区間です（06:27–16:45、10時間18分）");
   });
 });

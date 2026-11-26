@@ -244,7 +244,7 @@ function normalizeHomeHours(rows) {
     .sort(byDateAsc);
 }
 
-function normalizeHomeSegments(rows) {
+function normalizeDaySegments(rows) {
   return rows
     .filter((row) => row && row.date)
     .map((row) => ({
@@ -321,7 +321,8 @@ export function normalizeHealth(payload) {
     sleepEstimates: normalizeSleepEstimates(asRows(source.sleep_estimates)),
     workHours: normalizeWorkHours(asRows(source.work_hours)),
     homeHours: normalizeHomeHours(asRows(source.home_hours)),
-    homeSegments: normalizeHomeSegments(asRows(source.home_segments)),
+    homeSegments: normalizeDaySegments(asRows(source.home_segments)),
+    workSegments: normalizeDaySegments(asRows(source.work_segments)),
     goals: normalizeGoals(asRows(source.goals_settings)),
   };
 }
