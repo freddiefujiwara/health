@@ -3124,5 +3124,40 @@
    "duration_minutes_est": 345,
    "source": "Muse 会話記録"
   }
+ ],
+ "cpap_reports": [
+  {
+   "period_start": "2026-10-28",
+   "period_end": "2026-11-26",
+   "printed_on": "2026-11-27",
+   "days_in_period": 30,
+   "usage_days": 28,
+   "days_over_4h": 24,
+   "unused_days": 2,
+   "total_usage_min": 9114,
+   "avg_usage_min": 325,
+   "avg_usage_all_days_min": 303,
+   "max_usage_min": 543,
+   "ahi": 1.0,
+   "ai": 0.5,
+   "hi": 0.5,
+   "oai": 0.5,
+   "cai": 0.0,
+   "longest_apnea_sec": 138,
+   "snore_index": 1.7,
+   "fl_index": 4.7,
+   "rera_index": 0.0,
+   "csr_min_per_day": 0.1,
+   "leak_median_l_min": 4.0,
+   "leak_95th_l_min": 31.2,
+   "pressure_median_cmh2o": 3.3,
+   "pressure_95th_cmh2o": 4.8,
+   "pressure_max_cmh2o": 6.5,
+   "device": "RXiBreeze III APAP Pro",
+   "mode": "APAP",
+   "pressure_setting": "4/10",
+   "physician": "川上恵美子",
+   "source": "Resvent ResAssist report PDF"
+  }
  ]
 }

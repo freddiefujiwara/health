@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { useHealthData } from "@/composables/useHealthData";
 import LineChart from "@/components/LineChart.vue";
 import ShareSessionCard from "@/components/ShareSessionCard.vue";
-import { formatDecimal, formatInteger, formatKg, formatPercentChange } from "@/domain/format";
+import { formatDecimal, formatDurationMinutes, formatInteger, formatKg, formatPercentChange } from "@/domain/format";
 import {
   average,
   empiricalKcalPerKg,
@@ -49,6 +49,22 @@ const cards = computed(() => {
     { label: "直近7日 平均摂取", value: `${formatInteger(average(nutrition7.value.map((r) => r.intakeKcal)))} kcal`, sub: `目安 ${formatInteger(goals.value.intakeGuidelineKcal)} kcal`, public: true },
     { label: "直近7日 平均収支", value: `${formatInteger(average(nutrition7.value.map((r) => r.balanceKcal)))} kcal`, sub: "マイナスが減量方向", public: true },
     { label: "直近7日 平均歩数", value: `${formatInteger(average(steps7.value.map((r) => r.steps)))} 歩`, sub: "", public: true },
+  ];
+});
+
+const cpapReports = computed(() => data.value?.cpapReports ?? []);
+const latestCpap = computed(() => cpapReports.value[cpapReports.value.length - 1] ?? null);
+const cpapHistory = computed(() => [...cpapReports.value].reverse());
+const cpapCards = computed(() => {
+  if (!latestCpap.value) {
+    return [];
+  }
+  const r = latestCpap.value;
+  return [
+    { label: "AHI", value: `${formatDecimal(r.ahi)} 回/時間`, sub: `無呼吸 ${formatDecimal(r.ai)} ・ 低呼吸 ${formatDecimal(r.hi)}`, public: true },
+    { label: "平均使用時間", value: formatDurationMinutes(r.avgUsageMin), sub: `全日平均 ${formatDurationMinutes(r.avgUsageAllDaysMin)}`, public: true },
+    { label: "4時間以上使った日", value: `${formatInteger(r.daysOver4h)} / ${formatInteger(r.daysInPeriod)} 日`, sub: `使用 ${formatInteger(r.usageDays)} 日 ・ 未使用 ${formatInteger(r.unusedDays)} 日`, public: true },
+    { label: "リーク中央値", value: `${formatDecimal(r.leakMedianLMin)} L/min`, sub: `圧力中央値 ${formatDecimal(r.pressureMedianCmh2o)} cmH2O`, public: true },
   ];
 });
 
@@ -143,6 +159,33 @@ const predictionCards = computed(() => {
       <p v-else class="meta" style="margin-top: 8px">
         直近30日（完了日）の平均収支が続くと仮定し、7,700 kcal ≒ 1 kg で換算した単純推計です。水分や筋肉量の変化は含みません。
       </p>
+    </section>
+
+    <section v-if="latestCpap" class="table-wrap">
+      <h2 class="section-title">CPAP（睡眠時無呼吸）</h2>
+      <div class="card-grid" style="margin-bottom: 0">
+        <section v-for="card in cpapCards" :key="card.label" class="card">
+          <h2>{{ card.label }}</h2>
+          <p :class="card.public ? 'amount-value is-public' : 'amount-value'">{{ card.value }}</p>
+          <p v-if="card.sub" class="meta">{{ card.sub }}</p>
+        </section>
+      </div>
+      <p class="meta" style="margin-top: 8px">
+        対象期間 {{ latestCpap.periodStart }} 〜 {{ latestCpap.periodEnd }} の治療レポート（{{ latestCpap.device }}、{{ latestCpap.mode }} {{ latestCpap.pressureSetting }} cmH2O）です。
+      </p>
+      <table v-if="cpapReports.length > 1" class="stack-table" style="margin-top: 8px">
+        <thead>
+          <tr><th>期間</th><th>AHI</th><th>平均使用時間</th><th>4時間以上の日</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in cpapHistory" :key="row.periodStart">
+            <td data-label="期間">{{ row.periodStart }} 〜 {{ row.periodEnd }}</td>
+            <td data-label="AHI">{{ formatDecimal(row.ahi) }} 回/時間</td>
+            <td data-label="平均使用時間">{{ formatDurationMinutes(row.avgUsageMin) }}</td>
+            <td data-label="4時間以上の日">{{ formatInteger(row.daysOver4h) }} / {{ formatInteger(row.daysInPeriod) }} 日</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <ShareSessionCard v-if="store.hasSession && !store.shareMode" />

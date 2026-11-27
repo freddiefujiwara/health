@@ -18,6 +18,26 @@ function cardByLabel(wrapper, labelPart) {
   return wrapper.findAll("section.card").find((c) => c.find("h2").text().includes(labelPart));
 }
 
+describe("overview CPAP section", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it("shows the latest CPAP report summary", () => {
+    const wrapper = buildWrapper();
+    expect(wrapper.text()).toContain("CPAP（睡眠時無呼吸）");
+    const ahi = cardByLabel(wrapper, "AHI");
+    expect(ahi.find("p.amount-value").text()).toBe("1.0 回/時間");
+    const usage = cardByLabel(wrapper, "平均使用時間");
+    expect(usage.find("p.amount-value").text()).toBe("5時間25分");
+    const days = cardByLabel(wrapper, "4時間以上使った日");
+    expect(days.find("p.amount-value").text()).toBe("24 / 30 日");
+    expect(wrapper.text()).toContain("2026-10-28 〜 2026-11-26");
+  });
+});
+
 describe("overview privacy masking rules", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
