@@ -21,6 +21,7 @@ const SHEET_KEYS = [
   "chat_activity_hours",
   "chat_activity_daily_hours",
   "sleep_estimates",
+  "cpap_reports",
   "goals_settings",
 ];
 

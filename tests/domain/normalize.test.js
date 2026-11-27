@@ -13,6 +13,7 @@ describe("normalizeHealth", () => {
     expect(empty.chatActivityHours).toEqual([]);
     expect(empty.chatActivityDailyHours).toEqual([]);
     expect(empty.sleepEstimates).toEqual([]);
+    expect(empty.cpapReports).toEqual([]);
     expect(empty.goals.startWeightKg).toBeNull();
     expect(normalizeHealth({}).dailyNutrition).toEqual([]);
     expect(normalizeHealth(undefined).steps).toEqual([]);
@@ -341,5 +342,24 @@ describe("normalizeHealth lab results", () => {
     expect(result.sleepEstimates[0].sleepEndEst).toBeNull();
     expect(result.sleepEstimates[2].durationMinutesEst).toBe(166);
     expect(result.sleepEstimates[3].sleepStartEst).toBe("22:29");
+  });
+
+  it("normalizes cpap reports sorted by period start", () => {
+    const result = normalizeHealth({
+      cpap_reports: [
+        { period_start: "2026-10-28", period_end: "2026-11-26", ahi: 1.0, avg_usage_min: 325, days_over_4h: 24, days_in_period: 30, device: "RXiBreeze III APAP Pro" },
+        { period_start: "2026-09-04", period_end: "2026-10-27", ahi: "1.4", avg_usage_min: "328", days_over_4h: 40, days_in_period: 54, device: "RXiBreeze III APAP Pro" },
+        { period_start: "2026-09-04", period_end: "2026-10-27", ahi: 1.5, avg_usage_min: 330, days_over_4h: 41, days_in_period: 54, device: "RXiBreeze III APAP Pro" },
+        { period_end: "2026-08-31", ahi: 2.0 },
+        null,
+      ],
+    });
+    expect(result.cpapReports).toHaveLength(3);
+    expect(result.cpapReports[0].periodStart).toBe("2026-09-04");
+    expect(result.cpapReports[0].ahi).toBe(1.4);
+    expect(result.cpapReports[0].avgUsageMin).toBe(328);
+    expect(result.cpapReports[2].periodEnd).toBe("2026-11-26");
+    expect(result.cpapReports[2].device).toBe("RXiBreeze III APAP Pro");
+    expect(result.cpapReports[2].leakMedianLMin).toBeNull();
   });
 });

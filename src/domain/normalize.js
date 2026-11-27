@@ -216,6 +216,45 @@ function normalizeSleepEstimates(rows) {
     .sort(byDateAsc);
 }
 
+function normalizeCpapReports(rows) {
+  return rows
+    .filter((row) => row && row.period_start)
+    .map((row) => ({
+      periodStart: toText(row.period_start),
+      periodEnd: toText(row.period_end),
+      printedOn: toText(row.printed_on),
+      daysInPeriod: toNumber(row.days_in_period),
+      usageDays: toNumber(row.usage_days),
+      daysOver4h: toNumber(row.days_over_4h),
+      unusedDays: toNumber(row.unused_days),
+      totalUsageMin: toNumber(row.total_usage_min),
+      avgUsageMin: toNumber(row.avg_usage_min),
+      avgUsageAllDaysMin: toNumber(row.avg_usage_all_days_min),
+      maxUsageMin: toNumber(row.max_usage_min),
+      ahi: toNumber(row.ahi),
+      ai: toNumber(row.ai),
+      hi: toNumber(row.hi),
+      oai: toNumber(row.oai),
+      cai: toNumber(row.cai),
+      longestApneaSec: toNumber(row.longest_apnea_sec),
+      snoreIndex: toNumber(row.snore_index),
+      flIndex: toNumber(row.fl_index),
+      reraIndex: toNumber(row.rera_index),
+      csrMinPerDay: toNumber(row.csr_min_per_day),
+      leakMedianLMin: toNumber(row.leak_median_l_min),
+      leak95thLMin: toNumber(row.leak_95th_l_min),
+      pressureMedianCmh2o: toNumber(row.pressure_median_cmh2o),
+      pressure95thCmh2o: toNumber(row.pressure_95th_cmh2o),
+      pressureMaxCmh2o: toNumber(row.pressure_max_cmh2o),
+      device: toText(row.device),
+      mode: toText(row.mode),
+      pressureSetting: toText(row.pressure_setting),
+      physician: toText(row.physician),
+      source: toText(row.source),
+    }))
+    .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
+}
+
 function normalizeWorkHours(rows) {
   return rows
     .filter((row) => row && row.date)
@@ -319,6 +358,7 @@ export function normalizeHealth(payload) {
     chatActivityDailyHours: normalizeChatActivityDailyHours(asRows(source.chat_activity_daily_hours)),
     lateNightByDate: normalizeLateNightByDate(asRows(source.late_night_by_date)),
     sleepEstimates: normalizeSleepEstimates(asRows(source.sleep_estimates)),
+    cpapReports: normalizeCpapReports(asRows(source.cpap_reports)),
     workHours: normalizeWorkHours(asRows(source.work_hours)),
     homeHours: normalizeHomeHours(asRows(source.home_hours)),
     homeSegments: normalizeDaySegments(asRows(source.home_segments)),
