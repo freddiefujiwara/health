@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import * as d3 from "d3";
+import { selectBarTickLabels } from "@/domain/chartTicks";
 import { formatChartValue, formatDecimal } from "@/domain/format";
 import ChartTooltip from "@/components/ChartTooltip.vue";
 import { useChartResize } from "@/composables/useChartResize";
@@ -87,10 +88,7 @@ function render() {
     .nice()
     .range([h - margin.bottom, margin.top]);
 
-  const tickDates =
-    data.length <= 8
-      ? data.map((d) => d.date)
-      : data.filter((_, i) => i % Math.ceil(data.length / 6) === 0).map((d) => d.date);
+  const tickDates = selectBarTickLabels(data);
   svg
     .append("g")
     .attr("transform", `translate(0,${h - margin.bottom})`)
