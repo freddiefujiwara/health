@@ -1,0 +1,1 @@
+function e(e){let t=e.length<=8?1:Math.ceil(e.length/6);return e.filter((e,n)=>n%t===0).map(e=>e.date)}export{e as t};
