@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
 import BarChart from "@/components/BarChart.vue";
+import StackedBarChart from "@/components/StackedBarChart.vue";
 
 const points = [
   { date: "2026-10-29", value: 10234 },
@@ -196,5 +197,29 @@ describe("bar chart scatter points and category labels", () => {
     for (const label of ["土（注射日）", "日", "月", "火", "水", "木", "金"]) {
       expect(text).toContain(label);
     }
+  });
+});
+
+describe.each([
+  ["bar chart with category labels", BarChart, "plain", "日"],
+  ["stacked bar chart with date labels", StackedBarChart, "date", "11/"],
+])("%s x-axis", (_name, Chart, labelType, prefix) => {
+  it.each([
+    [8, [1, 2, 3, 4, 5, 6, 7, 8]],
+    [9, [1, 3, 5, 7, 9]],
+  ])("keeps the expected labels for %i points", (count, visibleDays) => {
+    const chartPoints = Array.from({ length: count }, (_, index) => {
+      const day = String(index + 1).padStart(2, "0");
+      return labelType === "plain"
+        ? { date: `日${day}`, value: 10 }
+        : { date: `2026-11-${day}`, totalKg: 90, fatKg: 27, muscleKg: 60, otherKg: 3 };
+    });
+    const props = labelType === "plain" ? { points: chartPoints, labelType } : { points: chartPoints };
+    const wrapper = mount(Chart, { props });
+    expect(wrapper.findAll("svg > g:first-child .tick text").map((tick) => tick.text())).toEqual(
+      visibleDays.map((day) => `${prefix}${String(day).padStart(2, "0")}`),
+    );
+    expect(wrapper.findAll("rect.hit")).toHaveLength(count);
+    wrapper.unmount();
   });
 });
